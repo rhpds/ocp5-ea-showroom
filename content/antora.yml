@@ -1,0 +1,12 @@
+name: modules
+title: "OpenShift 5 Early Access"
+version: ~
+nav:
+  - modules/ROOT/nav.adoc
+
+asciidoc:
+  attributes:
+    experimental: true
+    lab_name: "OpenShift 5 Early Access"
+    release-version: master
+    page-pagination: true

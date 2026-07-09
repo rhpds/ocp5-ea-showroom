@@ -1,0 +1,13 @@
+// Cluster
+:openshift_cluster_ingress_domain: {openshift_cluster_ingress_domain}
+:openshift_cluster_admin_username: {openshift_cluster_admin_username}
+:openshift_cluster_admin_password: {openshift_cluster_admin_password}
+
+// Common credentials
+:common_password: {common_password}
+
+// ACS
+:acs_namespace: stackrox
+
+// Images directory
+:imagesdir: ../assets/images

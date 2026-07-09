@@ -1,0 +1,15 @@
+.DS_Store
+.claude
+node_modules/
+www/
+.cache/
+.vscode/
+.idea/
+*.log
+*.tmp
+.env
+.env.local
+.env.*.local
+secrets.json
+package-lock.json
+yarn.lock

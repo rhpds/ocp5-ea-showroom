@@ -1,0 +1,13 @@
+= OpenShift 5 Early Access - Showroom
+
+Showroom content for the OpenShift 5 Early Access hosted environment.
+
+This is an https://docs.antora.org[Antora]-based site that provides lab
+instructions for customers participating in the OCP 5 Early Access program.
+
+== Local Development
+
+[source,bash]
+----
+podman run --rm -v $PWD:/antora -p 8080:8080 ghcr.io/juliaaano/antora-viewer
+----

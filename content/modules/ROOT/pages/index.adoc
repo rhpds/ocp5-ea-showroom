@@ -1,0 +1,38 @@
+= {lab_name}
+
+include::partial$_attributes.adoc[]
+
+Welcome to the *OpenShift 5 Early Access* hosted environment.
+
+This guide will walk you through the new features available in OpenShift 5
+as part of the Early Access program.
+
+== Getting Started
+
+Your environment has been provisioned with:
+
+* An OpenShift 5 cluster
+* Red Hat Advanced Cluster Security (ACS)
+* OpenShift GitOps (Argo CD)
+
+Use the credentials provided to access the OpenShift console and explore the
+platform.
+
+[cols="1,3"]
+|===
+| *OpenShift Console*
+| https://console-openshift-console.{openshift_cluster_ingress_domain}[Console,window=_blank]
+
+| *OpenShift API*
+| https://api.{openshift_cluster_ingress_domain}:6443
+
+| *ACS Central*
+| https://central-stackrox.{openshift_cluster_ingress_domain}[ACS Central,window=_blank]
+
+| *ArgoCD*
+| https://openshift-gitops-server-openshift-gitops.{openshift_cluster_ingress_domain}[ArgoCD,window=_blank]
+|===
+
+== Modules
+
+_Content coming soon._
