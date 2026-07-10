@@ -1,13 +1,18 @@
 ---
 type: showroom
 
-default_width: 30
+# Set the left content column width to 40%
+default_width: 40
+# Persist the URL state so browser refresh doesn't reset the UI
 persist_url_state: true
 
 view_switcher:
   enabled: true
   default_mode: split
 
-# tabs:
-#   - name: OCP Console
-#     url: 'https://console-openshift-console.${DOMAIN}'
+tabs:
+  - name: OpenShift Console
+    url: 'https://console-openshift-console.${DOMAIN}'
+  - name: Terminal
+    path: /wetty
+    port: 443
