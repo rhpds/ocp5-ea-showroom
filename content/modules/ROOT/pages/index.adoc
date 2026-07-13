@@ -27,7 +27,7 @@ platform.
 | https://api.{openshift_cluster_ingress_domain}:6443
 
 | *ACS Central*
-| https://central-stackrox.{openshift_cluster_ingress_domain}[ACS Central,window=_blank]
+| https://central-acs.{openshift_cluster_ingress_domain}[ACS Central,window=_blank]
 
 | *ArgoCD*
 | https://openshift-gitops-server-openshift-gitops.{openshift_cluster_ingress_domain}[ArgoCD,window=_blank]
