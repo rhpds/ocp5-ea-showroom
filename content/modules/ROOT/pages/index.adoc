@@ -42,23 +42,23 @@ Your environment has been provisioned with:
 | *Service* | *Username* | *Password* | *Link*
 
 | OpenShift Console
-| {openshift_cluster_admin_username}
-| {openshift_cluster_admin_password}
+| `{openshift_cluster_admin_username}`
+| `{openshift_cluster_admin_password}`
 | https://console-openshift-console.{openshift_cluster_ingress_domain}[Console,window=_blank]
 
 | ACS Central
-| admin
-| {common_password}
+| `admin`
+| `{common_password}`
 | https://central-acs.{openshift_cluster_ingress_domain}[ACS Central,window=_blank]
 
 | ArgoCD
-| {gitops_user}
-| {gitops_password}
+| `{gitops_user}`
+| `{gitops_password}`
 | https://openshift-gitops-server-openshift-gitops.{openshift_cluster_ingress_domain}[ArgoCD,window=_blank]
 
 | RHEL 9 VM (acs-virt namespace)
-| {vm_user}
-| {vm_password}
+| `{vm_user}`
+| `{vm_password}`
 | Via OpenShift Console > Virtualization > VirtualMachines
 |===
 
