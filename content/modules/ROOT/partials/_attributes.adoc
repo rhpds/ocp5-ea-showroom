@@ -6,8 +6,16 @@
 // Common credentials
 :common_password: {common_password}
 
+// GitOps
+:gitops_user: {openshift_gitops_user}
+:gitops_password: {openshift_gitops_password}
+
 // ACS
-:acs_namespace: stackrox
+:acs_namespace: acs
+
+// VM
+:vm_user: cloud-user
+:vm_password: {common_password}
 
 // Images directory
 :imagesdir: ../assets/images
