@@ -11,12 +11,14 @@ as part of the Early Access program.
 
 Your environment has been provisioned with:
 
-* An OpenShift 5 cluster
+* An OpenShift 5 cluster (3 control-plane + 3 worker nodes on AWS)
 * Red Hat Advanced Cluster Security (ACS)
-* OpenShift GitOps (Argo CD)
+* OpenShift GitOps (Argo CD) managing all platform components
 * OpenShift Virtualization with a RHEL 9 VM
-* OpenShift Lightspeed (AI assistant)
+* OpenShift Lightspeed (AI assistant) with MCP server integration
+* Lightspeed Agentic Operator for automated cluster operations
 * Cluster Observability Operator with Perses dashboards
+* MCP Gateway (Red Hat Connectivity Link) for external MCP connectivity
 
 == Access
 
