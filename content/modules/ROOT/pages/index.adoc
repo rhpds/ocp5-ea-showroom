@@ -98,11 +98,16 @@ oc patch application openshift-lightspeed -n openshift-gitops --type=merge \
 ----
 ====
 
-.Option 1: OpenAI (or OpenAI-compatible endpoint)
-[%collapsible]
-====
-Applies to both *Lightspeed* and *Agentic Troubleshooting*.
+Select your LLM provider below:
 
+[tabs]
+====
+OpenAI::
++
+Applies to both *Lightspeed* and *Agentic Troubleshooting*.
+Replace `<YOUR_API_KEY>`, `<YOUR_ENDPOINT_URL>`, and `<YOUR_MODEL_NAME>` with
+your values (e.g. `sk-abc123`, `https://api.openai.com/v1`, `gpt-4.1`).
++
 [source,bash,role="copypaste"]
 ----
 # Update Lightspeed credentials and config
@@ -154,15 +159,13 @@ oc patch agent default -n openshift-lightspeed --type=merge \
 oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
 ----
 
-Replace `<YOUR_API_KEY>`, `<YOUR_ENDPOINT_URL>`, and `<YOUR_MODEL_NAME>` with
-your values (e.g. `sk-abc123`, `https://api.openai.com/v1`, `gpt-4.1`).
-====
-
-.Option 2: Azure OpenAI
-[%collapsible]
-====
+Azure OpenAI::
++
 Applies to both *Lightspeed* and *Agentic Troubleshooting*.
-
+Replace `<YOUR_AZURE_API_KEY>`, `<YOUR_AZURE_ENDPOINT>`, and
+`<YOUR_DEPLOYMENT_NAME>` with your Azure OpenAI values
+(e.g. `https://myendpoint.openai.azure.com/`, `gpt-4o`).
++
 [source,bash,role="copypaste"]
 ----
 # Update Lightspeed credentials and config
@@ -208,23 +211,21 @@ spec:
 EOF
 
 oc patch agent default -n openshift-lightspeed --type=merge \
-  -p '{"spec":{"model":"<YOUR_DEPLOYMENT_NAME>"}}'
+  -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"<YOUR_DEPLOYMENT_NAME>"}}'
 
 # Restart Lightspeed to pick up changes
 oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
 ----
 
-Replace `<YOUR_AZURE_API_KEY>`, `<YOUR_AZURE_ENDPOINT>`, and
-`<YOUR_DEPLOYMENT_NAME>` with your Azure OpenAI values
-(e.g. `https://myendpoint.openai.azure.com/`, `gpt-4o`).
-====
-
-.Option 3: Google Cloud Vertex AI
-[%collapsible]
-====
+Google Cloud Vertex AI (Agentic only)::
++
 NOTE: Vertex AI is supported for *Agentic Troubleshooting only*. Lightspeed
 core will continue using the pre-configured model.
-
++
+Replace `<YOUR_GCP_PROJECT_ID>` and `<YOUR_GCP_REGION>` with your values
+(e.g. `my-project`, `us-east5`). The example below uses Anthropic Claude.
+For Google Gemini, change `modelProvider` to `Google` and update the model name.
++
 [source,bash,role="copypaste"]
 ----
 # Create Vertex AI credentials from your GCP service account JSON
@@ -232,9 +233,7 @@ oc create secret generic llm-creds-vertex-custom -n openshift-lightspeed \
   --from-file=GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/adc.json \
   --dry-run=client -o yaml | oc apply -f -
 
-# Update the Agentic LLMProvider (choose Anthropic or Google below)
-
-# For Anthropic (Claude) models:
+# Update the Agentic LLMProvider (Anthropic Claude example)
 oc apply -f - <<EOF
 apiVersion: agentic.openshift.io/v1alpha1
 kind: LLMProvider
@@ -251,6 +250,7 @@ spec:
       name: llm-creds-vertex-custom
 EOF
 
+# Update the Agentic Agent
 oc apply -f - <<EOF
 apiVersion: agentic.openshift.io/v1alpha1
 kind: Agent
@@ -266,51 +266,17 @@ spec:
     executionSeconds: 120
     verificationSeconds: 120
 EOF
-
-# For Google (Gemini) models, use these instead:
-# oc apply -f - <<EOF
-# apiVersion: agentic.openshift.io/v1alpha1
-# kind: LLMProvider
-# metadata:
-#   name: vertex-google-custom
-#   namespace: openshift-lightspeed
-# spec:
-#   type: GoogleCloudVertex
-#   googleCloudVertex:
-#     projectID: "<YOUR_GCP_PROJECT_ID>"
-#     region: "<YOUR_GCP_REGION>"
-#     modelProvider: Google
-#     credentialsSecret:
-#       name: llm-creds-vertex-custom
-# EOF
-#
-# oc apply -f - <<EOF
-# apiVersion: agentic.openshift.io/v1alpha1
-# kind: Agent
-# metadata:
-#   name: default
-#   namespace: openshift-lightspeed
-# spec:
-#   llmProvider:
-#     name: vertex-google-custom
-#   model: "gemini-2.5-flash"
-#   timeouts:
-#     analysisSeconds: 120
-#     executionSeconds: 120
-#     verificationSeconds: 120
-# EOF
 ----
 
-Replace `<YOUR_GCP_PROJECT_ID>` and `<YOUR_GCP_REGION>` with your values
-(e.g. `my-project`, `us-east5`).
-====
-
-.Option 4: RHEL AI (vLLM)
-[%collapsible]
-====
+RHEL AI / vLLM (Lightspeed only)::
++
 NOTE: RHEL AI is supported for *Lightspeed core only*. Agentic Troubleshooting
 will continue using the pre-configured model.
-
++
+Replace `<YOUR_API_KEY>`, `<YOUR_RHELAI_ENDPOINT>`, and `<YOUR_MODEL_NAME>`
+with your RHEL AI values (e.g. `https://my-rhelai-host:8443/v1`,
+`granite-3-8b-instruct`).
++
 [source,bash,role="copypaste"]
 ----
 # Update Lightspeed credentials
@@ -340,10 +306,6 @@ oc patch olsconfig cluster --type=merge -p '{
 # Restart Lightspeed to pick up changes
 oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
 ----
-
-Replace `<YOUR_API_KEY>`, `<YOUR_RHELAI_ENDPOINT>`, and `<YOUR_MODEL_NAME>`
-with your RHEL AI values (e.g. `https://my-rhelai-host:8443/v1`,
-`granite-3-8b-instruct`).
 ====
 
 == Modules

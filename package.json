@@ -1,0 +1,7 @@
+{
+  "name": "ocp5-ea-showroom",
+  "private": true,
+  "dependencies": {
+    "@asciidoctor/tabs": "^1.0.0-beta.6"
+  }
+}
