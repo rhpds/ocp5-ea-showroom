@@ -11,8 +11,6 @@ view_switcher:
   default_mode: split
 
 tabs:
-  - name: OpenShift Console
-    url: 'https://console-openshift-console.${DOMAIN}'
   - name: Terminal
     path: /wetty
     port: 443
