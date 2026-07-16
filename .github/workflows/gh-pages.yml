@@ -30,9 +30,7 @@ jobs:
         with:
           node-version: 24
       - name: install antora
-        run: npm install --global @antora/cli@3.1 @antora/site-generator@3.1 @asciidoctor/tabs
-      - name: install tabs locally for supplemental ui
-        run: npm install @asciidoctor/tabs
+        run: npm install --global @antora/cli@3.1 @antora/site-generator@3.1 @andrew-jones/antora-tabs-extension
       - name: antora generate
         run: antora generate site.yml --stacktrace
       - name: upload pages artifact

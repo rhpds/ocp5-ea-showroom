@@ -15,26 +15,14 @@ ui:
     snapshot: true
   supplemental_files:
     - path: ./content/supplemental-ui
-    - path: css/vendor/tabs.css
-      contents: ./node_modules/@asciidoctor/tabs/dist/css/tabs.css
-    - path: js/vendor/tabs.js
-      contents: ./node_modules/@asciidoctor/tabs/dist/js/tabs.js
-    - path: partials/footer-scripts.hbs
-      contents: |
-        <script src="{{uiRootPath}}/js/vendor/clipboard.js"></script>
-        <script src="{{uiRootPath}}/js/site.js"></script>
-        <script async src="{{uiRootPath}}/js/vendor/highlight.js"></script>
-        <script async src="{{uiRootPath}}/js/vendor/tabs.js"></script>
-    - path: partials/head-styles.hbs
-      contents: |
-        <link rel="stylesheet" href="{{{uiRootPath}}}/css/site.css">
-        <link rel="stylesheet" href="{{{uiRootPath}}}/css/vendor/tabs.css">
 
 asciidoc:
-  extensions:
-    - '@asciidoctor/tabs'
   attributes:
     showroom-collection-version: v1.5.2
+
+antora:
+  extensions:
+    - '@andrew-jones/antora-tabs-extension'
 
 output:
   dir: ./www
