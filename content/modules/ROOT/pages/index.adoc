@@ -105,14 +105,18 @@ Select your LLM provider below:
 OpenAI::
 +
 Applies to both *Lightspeed* and *Agentic Troubleshooting*.
-Replace `<YOUR_API_KEY>`, `<YOUR_ENDPOINT_URL>`, and `<YOUR_MODEL_NAME>` with
-your values (e.g. `sk-abc123`, `https://api.openai.com/v1`, `gpt-4.1`).
+Set the variables below with your values, then run the commands.
 +
 [source,bash,role="copypaste"]
 ----
+# Set your OpenAI values
+API_KEY="sk-abc123"
+ENDPOINT_URL="https://api.openai.com/v1"
+MODEL_NAME="gpt-5.4"
+
 # Update Lightspeed credentials and config
 oc create secret generic llm-credentials-custom -n openshift-lightspeed \
-  --from-literal=apitoken=<YOUR_API_KEY> \
+  --from-literal=apitoken="${API_KEY}" \
   --dry-run=client -o yaml | oc apply -f -
 
 oc patch olsconfig cluster --type=merge -p '{
@@ -121,21 +125,21 @@ oc patch olsconfig cluster --type=merge -p '{
       "providers": [{
         "name": "openai-custom",
         "type": "openai",
-        "url": "<YOUR_ENDPOINT_URL>",
+        "url": "'"${ENDPOINT_URL}"'",
         "credentialsSecretRef": {"name": "llm-credentials-custom"},
-        "models": [{"name": "<YOUR_MODEL_NAME>"}]
+        "models": [{"name": "'"${MODEL_NAME}"'"}]
       }]
     },
     "ols": {
       "defaultProvider": "openai-custom",
-      "defaultModel": "<YOUR_MODEL_NAME>"
+      "defaultModel": "'"${MODEL_NAME}"'"
     }
   }
 }'
 
 # Update Agentic Troubleshooting credentials and config
 oc create secret generic llm-creds-openai-custom -n openshift-lightspeed \
-  --from-literal=OPENAI_API_KEY=<YOUR_API_KEY> \
+  --from-literal=OPENAI_API_KEY="${API_KEY}" \
   --dry-run=client -o yaml | oc apply -f -
 
 oc apply -f - <<EOF
@@ -143,17 +147,16 @@ apiVersion: agentic.openshift.io/v1alpha1
 kind: LLMProvider
 metadata:
   name: openai-custom
-  namespace: openshift-lightspeed
 spec:
   type: OpenAI
   openAI:
-    url: "<YOUR_ENDPOINT_URL>"
+    url: "${ENDPOINT_URL}"
     credentialsSecret:
       name: llm-creds-openai-custom
 EOF
 
-oc patch agent default -n openshift-lightspeed --type=merge \
-  -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"<YOUR_MODEL_NAME>"}}'
+oc patch agent default --type=merge \
+  -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"'"${MODEL_NAME}"'"}}'
 
 # Restart Lightspeed to pick up changes
 oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
@@ -162,15 +165,22 @@ oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
 Azure OpenAI::
 +
 Applies to both *Lightspeed* and *Agentic Troubleshooting*.
-Replace `<YOUR_AZURE_API_KEY>`, `<YOUR_AZURE_ENDPOINT>`, and
-`<YOUR_DEPLOYMENT_NAME>` with your Azure OpenAI values
-(e.g. `https://myendpoint.openai.azure.com/`, `gpt-4o`).
+Set the variables below with your Azure OpenAI values, then run the commands.
++
+NOTE: The Agentic operator uses the OpenAI-compatible Responses API endpoint.
+The URL automatically gets `/openai/v1` appended for the agentic configuration.
+Classic Lightspeed uses the standard Azure OpenAI endpoint without this suffix.
 +
 [source,bash,role="copypaste"]
 ----
+# Set your Azure OpenAI values
+API_KEY="your-azure-api-key"
+AZURE_ENDPOINT="https://myendpoint.openai.azure.com"
+DEPLOYMENT_NAME="gpt-5.4"
+
 # Update Lightspeed credentials and config
 oc create secret generic llm-credentials-custom -n openshift-lightspeed \
-  --from-literal=apitoken=<YOUR_AZURE_API_KEY> \
+  --from-literal=apitoken="${API_KEY}" \
   --dry-run=client -o yaml | oc apply -f -
 
 oc patch olsconfig cluster --type=merge -p '{
@@ -179,21 +189,23 @@ oc patch olsconfig cluster --type=merge -p '{
       "providers": [{
         "name": "azure-custom",
         "type": "azure_openai",
-        "url": "<YOUR_AZURE_ENDPOINT>",
+        "url": "'"${AZURE_ENDPOINT}"'",
+        "deploymentName": "'"${DEPLOYMENT_NAME}"'",
         "credentialsSecretRef": {"name": "llm-credentials-custom"},
-        "models": [{"name": "<YOUR_DEPLOYMENT_NAME>"}]
+        "models": [{"name": "'"${DEPLOYMENT_NAME}"'"}]
       }]
     },
     "ols": {
       "defaultProvider": "azure-custom",
-      "defaultModel": "<YOUR_DEPLOYMENT_NAME>"
+      "defaultModel": "'"${DEPLOYMENT_NAME}"'"
     }
   }
 }'
 
 # Update Agentic Troubleshooting credentials and config
+# Note: Agentic uses OpenAI-compatible type with the Azure v1 Responses API endpoint
 oc create secret generic llm-creds-openai-custom -n openshift-lightspeed \
-  --from-literal=OPENAI_API_KEY=<YOUR_AZURE_API_KEY> \
+  --from-literal=OPENAI_API_KEY="${API_KEY}" \
   --dry-run=client -o yaml | oc apply -f -
 
 oc apply -f - <<EOF
@@ -201,17 +213,16 @@ apiVersion: agentic.openshift.io/v1alpha1
 kind: LLMProvider
 metadata:
   name: openai-custom
-  namespace: openshift-lightspeed
 spec:
   type: OpenAI
   openAI:
-    url: "<YOUR_AZURE_ENDPOINT>"
+    url: "${AZURE_ENDPOINT}/openai/v1"
     credentialsSecret:
       name: llm-creds-openai-custom
 EOF
 
-oc patch agent default -n openshift-lightspeed --type=merge \
-  -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"<YOUR_DEPLOYMENT_NAME>"}}'
+oc patch agent default --type=merge \
+  -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"'"${DEPLOYMENT_NAME}"'"}}'
 
 # Restart Lightspeed to pick up changes
 oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
@@ -222,50 +233,43 @@ Google Cloud Vertex AI (Agentic only)::
 NOTE: Vertex AI is supported for *Agentic Troubleshooting only*. Lightspeed
 core will continue using the pre-configured model.
 +
-Replace `<YOUR_GCP_PROJECT_ID>` and `<YOUR_GCP_REGION>` with your values
-(e.g. `my-project`, `us-east5`). The example below uses Anthropic Claude.
-For Google Gemini, change `modelProvider` to `Google` and update the model name.
+Set the variables below with your values, then run the commands.
+The example uses Anthropic Claude. For Google Gemini, change `MODEL_PROVIDER`
+to `Google` and update the model name.
 +
 [source,bash,role="copypaste"]
 ----
+# Set your Vertex AI values
+GCP_PROJECT_ID="my-project"
+GCP_REGION="us-east5"
+MODEL_PROVIDER="Anthropic"
+MODEL_NAME="claude-sonnet-4@20250514"
+GCP_CREDENTIALS_FILE="/path/to/your/adc.json"
+
 # Create Vertex AI credentials from your GCP service account JSON
 oc create secret generic llm-creds-vertex-custom -n openshift-lightspeed \
-  --from-file=GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/adc.json \
+  --from-file=GOOGLE_APPLICATION_CREDENTIALS="${GCP_CREDENTIALS_FILE}" \
   --dry-run=client -o yaml | oc apply -f -
 
-# Update the Agentic LLMProvider (Anthropic Claude example)
+# Update the Agentic LLMProvider
 oc apply -f - <<EOF
 apiVersion: agentic.openshift.io/v1alpha1
 kind: LLMProvider
 metadata:
-  name: vertex-anthropic-custom
-  namespace: openshift-lightspeed
+  name: vertex-custom
 spec:
   type: GoogleCloudVertex
   googleCloudVertex:
-    projectID: "<YOUR_GCP_PROJECT_ID>"
-    region: "<YOUR_GCP_REGION>"
-    modelProvider: Anthropic
+    projectID: "${GCP_PROJECT_ID}"
+    region: "${GCP_REGION}"
+    modelProvider: ${MODEL_PROVIDER}
     credentialsSecret:
       name: llm-creds-vertex-custom
 EOF
 
 # Update the Agentic Agent
-oc apply -f - <<EOF
-apiVersion: agentic.openshift.io/v1alpha1
-kind: Agent
-metadata:
-  name: default
-  namespace: openshift-lightspeed
-spec:
-  llmProvider:
-    name: vertex-anthropic-custom
-  model: "claude-sonnet-4@20250514"
-  timeouts:
-    analysisSeconds: 120
-    executionSeconds: 120
-    verificationSeconds: 120
-EOF
+oc patch agent default --type=merge \
+  -p '{"spec":{"llmProvider":{"name":"vertex-custom"},"model":"'"${MODEL_NAME}"'"}}'
 ----
 
 RHEL AI / vLLM (Lightspeed only)::
@@ -273,15 +277,18 @@ RHEL AI / vLLM (Lightspeed only)::
 NOTE: RHEL AI is supported for *Lightspeed core only*. Agentic Troubleshooting
 will continue using the pre-configured model.
 +
-Replace `<YOUR_API_KEY>`, `<YOUR_RHELAI_ENDPOINT>`, and `<YOUR_MODEL_NAME>`
-with your RHEL AI values (e.g. `https://my-rhelai-host:8443/v1`,
-`granite-3-8b-instruct`).
+Set the variables below with your RHEL AI values, then run the commands.
 +
 [source,bash,role="copypaste"]
 ----
+# Set your RHEL AI values
+API_KEY="your-api-key"
+RHELAI_ENDPOINT="https://my-rhelai-host:8443/v1"
+MODEL_NAME="granite-3-8b-instruct"
+
 # Update Lightspeed credentials
 oc create secret generic llm-credentials-custom -n openshift-lightspeed \
-  --from-literal=apitoken=<YOUR_API_KEY> \
+  --from-literal=apitoken="${API_KEY}" \
   --dry-run=client -o yaml | oc apply -f -
 
 # Update Lightspeed OLSConfig for RHEL AI
@@ -291,14 +298,14 @@ oc patch olsconfig cluster --type=merge -p '{
       "providers": [{
         "name": "rhelai-custom",
         "type": "rhelai_vllm",
-        "url": "<YOUR_RHELAI_ENDPOINT>",
+        "url": "'"${RHELAI_ENDPOINT}"'",
         "credentialsSecretRef": {"name": "llm-credentials-custom"},
-        "models": [{"name": "<YOUR_MODEL_NAME>"}]
+        "models": [{"name": "'"${MODEL_NAME}"'"}]
       }]
     },
     "ols": {
       "defaultProvider": "rhelai-custom",
-      "defaultModel": "<YOUR_MODEL_NAME>"
+      "defaultModel": "'"${MODEL_NAME}"'"
     }
   }
 }'
