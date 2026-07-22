@@ -81,8 +81,12 @@ reverting your custom configuration:
 oc patch application app-of-apps -n openshift-gitops --type=json \
   -p '[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
 
-# Pause auto-sync on the openshift-lightspeed application
+# Pause auto-sync on the openshift-lightspeed application (base OLS operator + OLSConfig)
 oc patch application openshift-lightspeed -n openshift-gitops --type=json \
+  -p '[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
+
+# Pause auto-sync on the openshift-agentic-lightspeed application
+oc patch application openshift-agentic-lightspeed -n openshift-gitops --type=json \
   -p '[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
 ----
 
@@ -94,6 +98,9 @@ oc patch application app-of-apps -n openshift-gitops --type=merge \
   -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
 
 oc patch application openshift-lightspeed -n openshift-gitops --type=merge \
+  -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+
+oc patch application openshift-agentic-lightspeed -n openshift-gitops --type=merge \
   -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
 ----
 ====
