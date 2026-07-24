@@ -79,8 +79,19 @@
     "FIXME",
     "rhdp",
     "roxctl",
+    "roxagent",
     "stackrox",
-    "virt"
+    "virt",
+    "VSOCK",
+    "vsock",
+    "Alertmanager",
+    "Authorino",
+    "Kuadrant",
+    "kubeconfig",
+    "Limitador",
+    "precheck",
+    "prechecks",
+    "prereqs"
   ],
   "ignorePaths": [
     "node_modules/**",
