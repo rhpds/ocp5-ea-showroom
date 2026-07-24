@@ -13,6 +13,8 @@ the scenarios described in the program materials, and provide structured
 feedback to the product teams. Your hands-on testing and observations are
 critical to shaping the GA releases of these technologies.
 
+WARNING: This cluster is owned and operated by Red Hat. *Do not* enter any confidential, non-public, or personally identifiable information (PII) into this environment — including prompts, data, credentials, or any content you would not otherwise share publicly. For more information, refer to the https://www.redhat.com/en/about/all-policies-guidelines[Red Hat Policies and Guidelines^].
+
 This environment covers five main feature areas:
 
 * *Agentic Troubleshooting* — Automated root-cause analysis and remediation of application issues triggered by alerts
@@ -30,17 +32,17 @@ This environment covers five main feature areas:
 | OpenShift Console
 | `{openshift_cluster_admin_username}`
 | `{openshift_cluster_admin_password}`
-| https://console-openshift-console.{openshift_cluster_ingress_domain}[Console,window=_blank]
+| https://console-openshift-console.{openshift_cluster_ingress_domain}[Console^]
 
 | ACS Central
 | `admin`
 | `{common_password}`
-| https://central-acs.{openshift_cluster_ingress_domain}[ACS Central,window=_blank]
+| https://central-acs.{openshift_cluster_ingress_domain}[ACS Central^]
 
 | OpenShift GitOps (Argo CD)
 | `{gitops_user}`
 | `{gitops_password}`
-| https://openshift-gitops-server-openshift-gitops.{openshift_cluster_ingress_domain}[Argo CD,window=_blank]
+| https://openshift-gitops-server-openshift-gitops.{openshift_cluster_ingress_domain}[Argo CD^]
 
 | RHEL 9 VM (acs-virt namespace)
 | `{vm_user}`
