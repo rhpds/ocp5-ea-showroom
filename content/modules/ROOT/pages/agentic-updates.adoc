@@ -1,0 +1,54 @@
+= OpenShift Lightspeed Agentic Updates
+
+include::partial$_attributes.adoc[]
+
+== Feature Overview
+
+Upgrade Intelligence brings AI-powered upgrade advisory to OpenShift. When a new cluster version becomes available, the system automatically analyzes your cluster's readiness and provides a risk-scored recommendation — all without manual intervention.
+
+The workflow:
+
+1. *Automatic detection* — The upgrade adapter controller detects new versions via `ClusterVersion.status.availableUpdates` and creates an AgenticRun CR.
+2. *AI-powered analysis* — The agent runs prechecks (degraded ClusterOperators, firing alerts, deprecated API usage, conditional update risks) and produces a deterministic risk score using the formula: `(degraded COs x 3) + (critical alerts x 2) + (deprecated APIs x 1) + (conditional risks x 2)`.
+3. *Risk-scored proposal* — The proposal appears in the Console's Cluster Update page with a risk level (LOW/MEDIUM/HIGH), precheck evidence table, and AI-generated summary.
+4. *Human decision* — The admin reviews and either approves (triggering the CVO upgrade) or denies the proposal. Proposals expire after 24 hours if no action is taken.
+5. *RefineChat* — For HIGH-risk proposals, the admin can open a chat sidebar to ask follow-up questions like "What's wrong with the monitoring operator?" and get cluster-specific answers.
+
+Key components:
+
+* *Agentic Operator* — manages the lifecycle of agents, LLM providers, and approval policies
+* *Agent CR* — defines an AI agent with a specific LLM provider and model
+* *LLMProvider CR* — configures credentials and endpoints for LLM backends (OpenAI, Azure, Vertex AI)
+* *ApprovalPolicy CR* — controls whether agent-proposed actions require human approval before execution
+* *AgenticRun CR* — triggers an analysis and optional execution workflow
+* *Console Plugin* — provides a UI for viewing agent activity, proposals, and the RefineChat sidebar
+
+== Before You Begin
+
+* Log in to the OpenShift console and verify the Lightspeed icon appears in the lower-right corner
+* Confirm the agentic operator is running: `oc get pods -n openshift-lightspeed | grep agentic`
+* Verify the default agent exists: `oc get agent default -n openshift-lightspeed`
+* Verify the LLM provider is configured: `oc get llmprovider -n openshift-lightspeed`
+
+== Hands-on Exercises
+
+_Content coming soon._
+
+== Other Things to Try
+
+* Create a custom Agent with a different LLM provider
+* Modify the ApprovalPolicy to auto-approve low-risk actions
+* Submit an AgenticRun requesting a namespace inventory
+* Try different LLM models and compare response quality (see xref:byom.adoc[Appendix A: Bring Your Own Model])
+
+== Known Limitations
+
+* The agentic CRDs are managed by CVO on some engineering candidate builds — a workaround Job overrides this automatically
+* The agentic sandbox image may need to be pinned to a specific digest if the latest build has SDK issues
+* GPT-5 agentic execution can be non-deterministic (sometimes refuses to call the exec_command tool)
+
+== Key Takeaways
+
+* The agentic system extends Lightspeed from Q&A to autonomous cluster operations
+* ApprovalPolicy provides a safety gate — nothing executes without explicit approval (unless configured otherwise)
+* AgenticRun is the entry point for triggering analysis and remediation workflows

@@ -1,0 +1,48 @@
+= MCP Gateway
+
+include::partial$_attributes.adoc[]
+
+== Feature Overview
+
+The MCP Gateway, part of Red Hat Connectivity Link, provides a centralized entry point for accessing multiple MCP servers through a single endpoint. It handles server federation, tool discovery, team isolation, authentication, and policy enforcement.
+
+Your environment includes three deployment patterns:
+
+* *Federated Gateway* — aggregates inventory, payments, and accounts mock MCP servers into a single endpoint with tool discovery and prefix-based routing
+* *Team A Gateway* — isolated gateway exposing only inventory and accounts tools
+* *Team B Gateway* — isolated gateway exposing only payments tools
+
+The federated gateway is protected by OAuth/OIDC authentication via Keycloak, requiring a valid bearer token for access.
+
+== Before You Begin
+
+* Verify the MCP Gateway pods are running: `oc get pods -n mock-mcp-servers`
+* Verify the mock MCP servers are running: `oc get pods -n mock-mcp-servers | grep -E "inventory|payments|accounts"`
+* Check MCPServerRegistrations are ready: `oc get mcpserverregistrations -n mock-mcp-servers`
+* Verify the MCPGatewayExtension is ready: `oc get mcpgatewayextension -n mock-mcp-servers`
+
+== Hands-on Exercises
+
+_Content coming soon._
+
+== Other Things to Try
+
+* Connect to the federated gateway using MCP Inspector or an MCP-compatible client
+* Use the `discover_tools` and `select_tools` meta-tools to browse federated tool sets
+* Test authentication: verify 401 without a token and 200 with a valid bearer token
+* Compare the tool sets visible through Team A vs Team B gateways to confirm isolation
+* Test with `user1` and `user2` credentials
+
+== Known Limitations
+
+* Tool calls through the gateway (hair-pin routing) require the backend MCP servers to support JSON response mode — SSE-only servers may not work for tool execution
+* RateLimitPolicy is not enforced when using the `openshift-default` GatewayClass (requires Istio gateway controller)
+* The `openshift-default` GatewayClass does not support Envoy HTTP filter injection needed for Limitador-based rate limiting
+* HTTPS on the federated gateway requires the MCPGatewayExtension to target the HTTP listener (the controller generates the public route)
+
+== Key Takeaways
+
+* The MCP Gateway federates multiple MCP servers behind a single, authenticated endpoint
+* Team isolation uses separate Gateway objects per team — each team gets its own broker and config
+* OAuth/OIDC authentication is enforced via Kuadrant AuthPolicy with Keycloak as the identity provider
+* Tool discovery is lazy — clients use `discover_tools` and `select_tools` to browse and load tools on demand

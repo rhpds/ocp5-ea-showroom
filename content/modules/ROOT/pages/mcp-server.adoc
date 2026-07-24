@@ -1,0 +1,46 @@
+= MCP Server
+
+include::partial$_attributes.adoc[]
+
+== Feature Overview
+
+Model Context Protocol (MCP) servers expose platform APIs as tools that AI agents can discover and invoke using the open MCP standard. Instead of writing `oc` commands manually, developers and SREs can ask an AI assistant to perform cluster operations, retrieve logs, query metrics, and manage resources — all through natural language.
+
+Your environment includes two MCP servers:
+
+* *OpenShift MCP Server* — provides tools for querying and managing OpenShift cluster resources. Includes multiple toolsets:
+** *Core* — generic resource CRUD (get, list, create, update, delete), pod logs, events
+** *Metrics* — query Prometheus for CPU, memory, and custom metrics via PromQL
+** *Config* — manage kubeconfig contexts for multi-cluster operations
+** *NetEdge* — diagnose OVN networking issues on nodes
+* *ACS MCP Server* — provides tools for interacting with Red Hat Advanced Cluster Security APIs (policies, violations, images, deployments, risk scores, etc.)
+
+These servers implement the MCP specification, allowing any MCP-compatible client (Claude Desktop, Cursor, VS Code, MCP Inspector, or custom agents) to connect and use cluster and security tools. RBAC is enforced — the MCP server respects the user's OpenShift permissions, so a read-only user cannot delete resources even through the AI.
+
+== Before You Begin
+
+* Verify the OpenShift MCP server is running: `oc get pods -n openshift-mcp`
+* Verify the ACS MCP server is running: `oc get pods -n acs-mcp`
+* Check the MCP server services: `oc get svc -n openshift-mcp` and `oc get svc -n acs-mcp`
+
+== Hands-on Exercises
+
+_Content coming soon._
+
+== Other Things to Try
+
+* Connect to the OpenShift MCP server from an MCP-compatible client (e.g., Claude Desktop, Cursor, MCP Inspector)
+* Use the ACS MCP server to query vulnerability data for images running in the cluster
+* List available tools on each server using the `tools/list` MCP method
+* Combine MCP server tools with the agentic operator for AI-driven cluster operations
+
+== Known Limitations
+
+* The ACS MCP server image is pinned to a specific tag for `ca_cert_path` support
+* The OpenShift MCP server runs with cluster-admin privileges
+
+== Key Takeaways
+
+* MCP servers bridge the gap between AI agents and platform APIs using a standardized protocol
+* Each server exposes a curated set of tools with typed parameters and structured responses
+* MCP servers can be used standalone or federated through an MCP Gateway

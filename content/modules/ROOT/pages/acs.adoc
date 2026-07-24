@@ -1,0 +1,51 @@
+= Advanced Cluster Security (ACS) 5
+
+include::partial$_attributes.adoc[]
+
+== Feature Overview
+
+Red Hat Advanced Cluster Security (ACS) 5 introduces several new capabilities for securing containerized and virtualized workloads:
+
+* *VM Vulnerability Management* — extends RHACS vulnerability scanning to cover virtual machine workloads running on OpenShift Virtualization. The `roxagent` binary runs inside VMs, scans installed packages (RPM/DNF), and reports vulnerabilities to ACS Central via the collector relay over VSOCK. Organizations gain unified vulnerability visibility across both containers and VMs from a single ACS console.
+
+* *File Activity Monitoring (FAM)* — provides runtime file integrity monitoring. Security teams can define custom file paths (with wildcard support) to monitor for access, modification, and rename operations. File activity criteria can be combined with process-level criteria (process name, ancestor, arguments, UID) in deployment and node policies, enabling detection of unauthorized file access patterns required for compliance frameworks such as PCI-DSS.
+
+* *Init Container Security Coverage* — RHACS now evaluates init containers for both image scanning and security policies. When a deployment references init containers, their images are scanned for vulnerabilities using the same process as main container images. Build and Deploy stage policies can be configured to include or exclude init containers using the "Filters" menu.
+
+* *ACS MCP Server* — exposes ACS Vulnerability Management and Configuration Management APIs as MCP tools, allowing AI agents to interact programmatically with security data.
+
+
+== Before You Begin
+
+* Log in to ACS Central: https://central-acs.{openshift_cluster_ingress_domain}[ACS Central,window=_blank] (admin / `{common_password}`)
+* Verify the Secured Cluster is connected: navigate to *Platform Configuration > Clusters* in ACS Central
+* Verify the VM is running: `oc get vmi -n acs-virt`
+* Check roxagent status on the VM:
+** Connect via the OpenShift console: *Virtualization > VirtualMachines > rhel9-vm > Console*
+** Log in with `{vm_user}` / `{vm_password}`
+** Run: `systemctl status roxagent.service` and `journalctl -u roxagent.service --no-pager -n 20`
+
+== Hands-on Exercises
+
+_Content coming soon._
+
+== Other Things to Try
+
+* Navigate to *Vulnerability Management > Results > Virtual Machines* in ACS Central to view VM scan results
+* Check file activity monitoring events in the ACS portal
+* Connect to the ACS MCP server from an MCP client and query policies, violations, and image data
+* Trigger a roxagent scan manually on the VM: `sudo systemctl start roxagent.service`
+* Review the SecuredCluster CR to see FAM and initContainer scanning configuration
+
+== Known Limitations
+
+* The collector relay (which receives reports from roxagent via VSOCK) does not start on control-plane nodes unless `ROX_VIRTUAL_MACHINES_RELAY_ENABLED_ON_MASTER_NODES` is explicitly set — VMs should be scheduled on worker nodes
+* roxagent retries on failure via `Restart=on-failure` with a 60-second retry interval; the systemd timer also retries periodically
+* VM scanning is a Technology Preview feature
+
+== Key Takeaways
+
+* ACS 5 extends security coverage beyond containers to virtual machines running on OpenShift Virtualization
+* roxagent communicates with the collector via VSOCK, requiring no network configuration inside the VM
+* File activity monitoring provides visibility into security-relevant file access patterns
+* The ACS MCP server enables AI agents to query and act on security data programmatically

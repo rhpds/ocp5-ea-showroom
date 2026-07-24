@@ -1,1 +1,10 @@
 * xref:index.adoc[Welcome]
+* Exercises
+** xref:agentic-troubleshooting.adoc[Agentic Troubleshooting]
+** xref:agentic-updates.adoc[Agentic Updates]
+** xref:mcp-server.adoc[MCP Server]
+** xref:mcp-gateway.adoc[MCP Gateway]
+** xref:acs.adoc[ACS 5]
+* Appendices
+** xref:byom.adoc[Appendix A: Bring Your Own Model]
+** xref:cluster-details.adoc[Appendix B: Technical Cluster Details]

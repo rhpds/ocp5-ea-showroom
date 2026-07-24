@@ -1,0 +1,48 @@
+= Agentic Troubleshooting
+
+include::partial$_attributes.adoc[]
+
+== Feature Overview
+
+Agentic Troubleshooting combines OpenShift Lightspeed with the agentic operator to provide event-driven, autonomous investigation and remediation of cluster and application issues.
+
+The system works in three stages:
+
+1. *Natural language root cause analysis* — An SRE can use Lightspeed chat to investigate issues, whether triggered by a Prometheus alert or a general problem like a timeout or connection failure. The AI queries cluster state via MCP, correlates metrics and logs, and can dynamically generate inline Perses charts for visualization. Charts can be exported to dedicated dashboards using the "Add To Dashboard" button.
+
+2. *Event-driven autonomous investigation* — The Alertmanager adapter triggers automatic background investigations when critical alerts fire. A Platform Administrator configures the adapter, then navigates to the Agentic Runs UI to see which alerts are being analyzed and review the results.
+
+3. *Agentic Runs drill-down and remediation* — After investigation, the agent produces a step-by-step remediation plan in a "Proposed" state. An operations lead navigates to the Agentic Runs drill-down page to audit findings and clicks "Execute the remediation" to authorize changes. Remediation runs in a sandboxed pod with least-privilege RBAC, and a detailed post-execution summary is provided.
+
+Your environment includes pre-deployed applications in the `payments` namespace with intentional issues (database connection exhaustion, error-rate alerts) designed to exercise these workflows.
+
+== Before You Begin
+
+* Verify the troubleshooting applications are running: `oc get pods -n payments`
+* Check that PrometheusRules are defined: `oc get prometheusrule -n payments`
+* Confirm user workload monitoring is enabled: `oc get configmap cluster-monitoring-config -n openshift-monitoring -o jsonpath='{.data.config\.yaml}'`
+* Verify alerts are firing: check *Observe > Alerting* in the OpenShift console
+
+== Hands-on Exercises
+
+_Content coming soon._
+
+== Other Things to Try
+
+* Create an AgenticRun targeting the payments namespace to diagnose alert conditions
+* Examine the reporting-service logs to understand the root cause of failures
+* Check Postgres connection status and correlate with application errors
+* Navigate to the Agentic Runs UI to view investigation results and drill into details
+* Approve a proposed remediation and observe the post-execution summary
+* Roll the reporting-service to a different image version and observe alert behavior changes
+
+== Known Limitations
+
+* The OLS console plugin shows "not installed" because the operator uses direct install (no CSV from OLM)
+* OTEL traces from the agentic operator are not yet visible in Jaeger (upstream fix pending)
+
+== Key Takeaways
+
+* Agentic troubleshooting combines Prometheus alerting with AI-driven root cause analysis
+* The system can identify issues like database connection exhaustion, pod crashes, and configuration errors
+* All proposed remediation actions go through the ApprovalPolicy before execution

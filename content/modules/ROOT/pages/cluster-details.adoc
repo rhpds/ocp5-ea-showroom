@@ -1,0 +1,110 @@
+= Appendix B: Technical Cluster Details
+
+include::partial$_attributes.adoc[]
+
+This appendix describes everything that has been pre-installed and configured
+in your EAP cluster. Use this as a reference when exploring the environment
+or troubleshooting.
+
+== Cluster Infrastructure
+
+* *OpenShift 5 cluster* on AWS (3 control-plane + 3 worker nodes)
+* *OpenShift GitOps (Argo CD)* manages all platform components using an app-of-apps pattern
+* All component configurations are stored in a Git repository and deployed declaratively
+* *cert-manager* with ZeroSSL ClusterIssuer for automatic TLS certificate provisioning
+* *Web Terminal* operator for browser-based `oc` access
+
+== OpenShift Lightspeed
+
+* *OLS Operator* — installed directly (not via OLM) from upstream kustomize manifests
+* *OLSConfig* CR configures the classic AI assistant with:
+** Default LLM provider and model (configurable via BYOM appendix)
+** MCP server integration for tool-augmented responses
+** PostgreSQL conversation cache
+** OTEL collector for audit logging
+* *Agentic Operator* — deployed alongside OLS for automated cluster operations
+** Agent CR (`default`) with configurable LLM provider
+** LLMProvider CR for model credentials
+** ApprovalPolicy CR for execution gate control
+** Agentic console plugin for UI-driven troubleshooting
+** CRDs installed via a sync Job from upstream GitHub
+** CVO override Job to prevent CVO from reverting agentic CRDs
+
+== Red Hat Advanced Cluster Security (ACS) 5
+
+* *ACS Operator* installed from a pre-release CatalogSource
+* *Central* with TLS certificate from cert-manager (ZeroSSL)
+* *Secured Cluster* with Cluster Registration Secrets (CRS) — generated via Central API
+* *File Activity Monitoring (FAM)* enabled in the SecuredCluster CR
+* *InitContainer scanning* enabled
+* *ACS MCP Server* — upstream stackrox-mcp chart providing MCP access to ACS APIs
+** Central CA cert copied to the MCP server namespace via a prereqs Job
+** Image pinned to a specific tag for `ca_cert_path` support
+
+== OpenShift Virtualization & VM Scanning
+
+* *OpenShift Virtualization* operator installed
+* *RHEL 9 VM* (`rhel9-vm` in `acs-virt` namespace)
+** Uses a containerDisk image (no DataVolume/DataSource)
+** Cloud-init userData stored in a Secret (bypasses 2KB inline limit)
+** `roxagent` binary downloaded from `mirror.openshift.com` and configured as a systemd service
+** systemd timer runs roxagent periodically (`OnBootSec=5min`, `OnUnitActiveSec=3h40m`)
+** `Restart=on-failure` with `RestartSec=60` for resilience during cluster startup
+** VSOCK enabled for roxagent-to-collector communication
+
+== MCP Gateway (Red Hat Connectivity Link)
+
+* *Connectivity Link operator* (Kuadrant) installed from OperatorHub
+* *Kuadrant CR* activates policy enforcement (Authorino + Limitador)
+
+=== Federated Gateway (`mock-mcp-servers` namespace)
+
+* *Gateway* in `openshift-ingress` with automatic DNS registration
+** `mcp` listener (HTTP, port 80) for MCP traffic
+** `mcp-https` listener (HTTPS, port 443) with cert-manager TLS certificate
+** `mcps` listener (HTTP, port 80) for internal `*.mcp.internal` backend routing
+* *MCPGatewayExtension* targeting the `mcp` listener
+* Three *mock MCP servers* (inventory, payments, accounts) providing 15 fake tools
+** Config-driven Python/FastMCP servers reading tool definitions from ConfigMap-mounted YAML
+** Custom container image built from a config-driven FastMCP server
+* *MCPServerRegistrations* with prefixed tool names for federation
+* *AuthPolicy* enforcing JWT bearer token authentication via Keycloak
+* *Keycloak setup Job* creates an `mcp-gateway` client and test users (`user1`, `user2`) in the Keycloak realm
+
+=== Team-Isolated Gateways (Scenario 4)
+
+* *Team A* (`team-a-mcp` namespace)
+** Own Gateway, MCPGatewayExtension, and broker
+** Inventory + accounts mock servers
+** OpenShift Route for HTTPS access (`team-a-mcp.apps...`)
+* *Team B* (`team-b-mcp` namespace)
+** Own Gateway, MCPGatewayExtension, and broker
+** Payments mock server only
+** OpenShift Route for HTTPS access (`team-b-mcp.apps...`)
+* Each team has complete isolation — separate Gateway objects, config secrets, and broker deployments
+
+== Cluster Observability
+
+* *Cluster Observability Operator* installed
+* *UIPlugin* for Monitoring/Perses dashboards
+* *PersesGlobalDatasource* configured for Thanos querier
+* User workload monitoring enabled (`enableUserWorkload: true`)
+
+== Agentic Troubleshooting Scenarios (`payments` namespace)
+
+* Pre-deployed applications for troubleshooting exercises:
+** *payments-api* — payment processing service
+** *reporting-service* — report generator (image version may vary for scenario testing)
+** *postgres* — database backend with intentionally limited connection slots
+** *catalog-services*, *inventory*, *user-imports* — supporting services
+* *PrometheusRules* for alerts (e.g., `PaymentErrorRateHigh`)
+* *ServiceMonitors* for Prometheus scraping
+* *Cluster monitoring ConfigMap* for user workload monitoring
+
+== Authentication (Keycloak)
+
+* Red Hat Build of Keycloak deployed in `keycloak` namespace
+* OpenShift OAuth configured with Keycloak as an OpenID Connect identity provider
+* Realm: `keycloak`
+* MCP Gateway client: `mcp-gateway` (confidential client with direct access grants)
+* Test users: `user1` / `user1pass`, `user2` / `user2pass`
