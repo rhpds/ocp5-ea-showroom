@@ -27,7 +27,80 @@ Red Hat Advanced Cluster Security (ACS) 5 introduces several new capabilities fo
 
 == Hands-on Exercises
 
-_Content coming soon._
+=== Exercise 5: Init Container Security Coverage
+
+This exercise will walk you through and demonstrate the capabailities in OCP5 and RHACS (5) for the scanning of Init Containers.
+
+Init Containers are standalone containers executed as part of a Kubernetes deployment. They occur before the actual Pods of the deployment are created, and are used
+to perform various initialisation tasks needed by the Pod, namely operations like file initialisation, DB population and the like.
+
+As such they are an attack vector for exploitation; RHACS now has capabilities for scanning and acting upon exploits.
+
+Unlike Pods, Init Containers are notr resident; once executed they are removed, so the runtime policies offered by RHACS focus on process execution and baseline comparisons.
+
+For this exercise we will be using the OCP and RHACS interfaces. 
+
+. Logging on to the OpenShift 5 Cluster
+
+Using the following link, log into the OpenShift cluster - https://console-openshift-console.{openshift_cluster_ingress_domain}[OpenShift cluster^] using the credentials
+user:{openshift_cluster_admin_username} password:{openshift_cluster_admin_password}
+
+Now open the OpenShift Lightspeed dialog (if it is not already open). This is the icon at the bottom right of the interface. We are going to
+ask OpenShift Lightspeed to create a link in the console (the 3x3 square icon at the top) to allow us to go to the ACS console quickly from the OpenShift interface. 
+
+[source,bash,role="copypaste"]
+----
+can you create a global consolelink that has the label 'ACS' and points to the route for the ACS console. Add the Red Hat icon to the consolelink
+----
+
+Once it is completed, click on the 3x3 icon at the top; you should see this:
+
++
+image::acs-initcontainer-menu.png[The ACS console link in the OpenShift application menu]
+
+
+. Generate a token for the `mcp-admin` user (has full cluster access):
++
+[source,bash,role="copypaste",subs="+attributes"]
+----
+oc login -u mcp-admin -p mcpadminpass
+echo "============================================================"
+echo "Your mcp-admin token: $(oc whoami -t)"
+echo "============================================================"
+oc login -u {openshift_cluster_admin_username} -p {openshift_cluster_admin_password}
+----
++
+NOTE: The commands above log in as `mcp-admin` to obtain the token, then immediately switch back to the cluster admin. Copy the displayed token for use in your AI client.
+
+. Configure your MCP client with the endpoint and token, replacing `<paste-your-token-here>` with the token you just generated.
++
+For *Claude Code* (CLI), run:
++
+[source,bash,role="copypaste",subs="+attributes"]
+----
+claude mcp add --transport http openshift \
+  https://mcp-server.{openshift_cluster_ingress_domain}/mcp \
+  --header "Authorization: Bearer <paste-your-token-here>"
+----
++
+For *Claude Desktop* or *Cursor*, add the following to your MCP server settings:
++
+[source,json,role="copypaste",subs="+attributes"]
+----
+{
+  "mcpServers": {
+    "openshift": {
+      "url": "https://mcp-server.{openshift_cluster_ingress_domain}/mcp",
+      "headers": {
+        "Authorization": "Bearer <paste-your-token-here>"
+      }
+    }
+  }
+}
+----
+
+. Verify the connection by asking your AI assistant: _"List all pods in namespace openshift-lightspeed"_ and confirm it returns results without you running any `oc` commands.
+
 
 == Other Things to Try
 
