@@ -36,7 +36,7 @@ to perform various initialisation tasks needed by the Pod, namely operations lik
 
 As such they are an attack vector for exploitation; RHACS now has capabilities for scanning and acting upon exploits.
 
-Unlike Pods, Init Containers are notr resident; once executed they are removed, so the runtime policies offered by RHACS focus on process execution and baseline comparisons.
+Unlike Pods, Init Containers are not resident; once executed they are removed, so the runtime policies offered by RHACS focus on process execution and baseline comparisons.
 
 For this exercise we will be using the OCP and RHACS interfaces. 
 
