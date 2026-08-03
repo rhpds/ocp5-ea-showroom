@@ -29,7 +29,7 @@ Red Hat Advanced Cluster Security (ACS) 5 introduces several new capabilities fo
 
 === Exercise 5: Init Container Security Coverage
 
-This exercise will walk you through and demonstrate the capabailities in OCP5 and RHACS (5) for the scanning of Init Containers.
+This exercise will walk you through and demonstrate the capabilities in OCP5 and RHACS (5) for the scanning of Init Containers.
 
 Init Containers are standalone containers executed as part of a Kubernetes deployment. They occur before the actual Pods of the deployment are created, and are used
 to perform various initialisation tasks needed by the Pod, namely operations like file initialisation, DB population and the like.
@@ -40,7 +40,7 @@ Unlike Pods, Init Containers are not resident; once executed they are removed, s
 
 For this exercise we will be using the OCP and RHACS interfaces. 
 
-. Logging on to the OpenShift 5 Cluster
+== Logging on to the OpenShift 5 Cluster
 
 Using the following link, log into the OpenShift cluster - https://console-openshift-console.{openshift_cluster_ingress_domain}[OpenShift cluster^] using the credentials
 user:{openshift_cluster_admin_username} password:{openshift_cluster_admin_password}
@@ -58,48 +58,56 @@ Once it is completed, click on the 3x3 icon at the top; you should see this:
 +
 image::acs-initcontainer-menu.png[The ACS console link in the OpenShift application menu]
 
+== Using OpenShift Lightspeed and the OpenShift User Interface to prepare the tests
 
-. Generate a token for the `mcp-admin` user (has full cluster access):
-+
-[source,bash,role="copypaste",subs="+attributes"]
-----
-oc login -u mcp-admin -p mcpadminpass
-echo "============================================================"
-echo "Your mcp-admin token: $(oc whoami -t)"
-echo "============================================================"
-oc login -u {openshift_cluster_admin_username} -p {openshift_cluster_admin_password}
-----
-+
-NOTE: The commands above log in as `mcp-admin` to obtain the token, then immediately switch back to the cluster admin. Copy the displayed token for use in your AI client.
+In the OpenShift lightspeed dialog, enter the following:
 
-. Configure your MCP client with the endpoint and token, replacing `<paste-your-token-here>` with the token you just generated.
-+
-For *Claude Code* (CLI), run:
-+
-[source,bash,role="copypaste",subs="+attributes"]
+[source,role="copypaste"]
 ----
-claude mcp add --transport http openshift \
-  https://mcp-server.{openshift_cluster_ingress_domain}/mcp \
-  --header "Authorization: Bearer <paste-your-token-here>"
-----
-+
-For *Claude Desktop* or *Cursor*, add the following to your MCP server settings:
-+
-[source,json,role="copypaste",subs="+attributes"]
-----
-{
-  "mcpServers": {
-    "openshift": {
-      "url": "https://mcp-server.{openshift_cluster_ingress_domain}/mcp",
-      "headers": {
-        "Authorization": "Bearer <paste-your-token-here>"
-      }
-    }
-  }
-}
+create a new project for me called acs-init-container-test
 ----
 
-. Verify the connection by asking your AI assistant: _"List all pods in namespace openshift-lightspeed"_ and confirm it returns results without you running any `oc` commands.
+The MCP server requires approval, so approve when it asks you.
+
+On the left hand navigation, choose 'Projects' and then acs-init-container-tests. All of the examples will be executed in this project to allow you to observe the results simply in
+the ACS console.
+
+Now click on the '>_' icon at the top right to open the integrated console in the User Interface. We will use this to interact with the project for simplicities sake.
+
+In the terminal type:
+
+[source,bash,role="copypaste"]
+----
+oc project acs-init-container-test
+----
+
+Check the project has no workloads using:
+
+[source,bash,role="copypaste"]
+----
+oc get pods
+----
+
+== Enabling Privileged access for the tests
+
+In the console, type:
+
+[source,bash,role="copypaste"]
+----
+oc adm policy add-scc-to-user privileged system:serviceaccount:acs-init-container-test:default
+----
+
+This allows Pods, and Init Containers, to switch to Privileged to perform actions.
+
+== Running the tests without detection policies in place
+
+For the sake of testing we have four specific use-cases represented by different Deployment definitions, each designed to highlight a behaviour now offered within
+RHACS for the monitoring and actioning of Init Containers. These are:
+
+.. 'Clean' deployment - runs an Init Container that has nothing out of the ordinary in it
+.. 'Dirty' deployment - runs an Init Container that does something that is a violation
+.. 'Blue' deployment - runs an Init Container that performs a Privileged action that has justification 
+.. 'Red' deployment - runs an Init Container that uses an unpatched Image with known CVEs and performs a Privileged action that has no justification 
 
 
 == Other Things to Try
@@ -109,12 +117,6 @@ For *Claude Desktop* or *Cursor*, add the following to your MCP server settings:
 * Connect to the ACS MCP server from an MCP client and query policies, violations, and image data
 * Trigger a roxagent scan manually on the VM: `sudo systemctl start roxagent.service`
 * Review the SecuredCluster CR to see FAM and initContainer scanning configuration
-
-== Known Limitations
-
-* The collector relay (which receives reports from roxagent via VSOCK) does not start on control-plane nodes unless `ROX_VIRTUAL_MACHINES_RELAY_ENABLED_ON_MASTER_NODES` is explicitly set — VMs should be scheduled on worker nodes
-* roxagent retries on failure via `Restart=on-failure` with a 60-second retry interval; the systemd timer also retries periodically
-* VM scanning is a Technology Preview feature
 
 == Key Takeaways
 
