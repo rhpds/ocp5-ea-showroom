@@ -55,8 +55,17 @@ can you create a global consolelink that has the label 'ACS' and points to the r
 
 Once it is completed, click on the 3x3 icon at the top; you should see this:
 
-+
 image::acs-initcontainer-menu.png[The ACS console link in the OpenShift application menu]
+
+=== Logging into the RHACS console
+
+Having added the link to the Console shortcuts, click on the 3x3 icon at the top right of the OCP User Interface and click on 'ACS'. This will open a tab with
+the ACS console in it.
+
+Log into the ACS console; username is *admin* and the password can be obtained, using the OpenShift User Interface, by clicking on *Workloads*, *Secrets*, setting the project to *ACS*
+and clicking on the *central-admin-password* secret. You can use the 'copy' icon next to the *password* field to copy the password to the clipboard.
+
+image::acs-console.png[The ACS console]
 
 == Using OpenShift Lightspeed and the OpenShift User Interface to prepare the tests
 
@@ -108,6 +117,19 @@ RHACS for the monitoring and actioning of Init Containers. These are:
 .. 'Dirty' deployment - runs an Init Container that does something that is a violation
 .. 'Blue' deployment - runs an Init Container that performs a Privileged action that has justification 
 .. 'Red' deployment - runs an Init Container that uses an unpatched Image with known CVEs and performs a Privileged action that has no justification 
+
+In the console of the OCP User Interface type:
+
+[source,bash,role="copypaste"]
+----
+git clone https://github.com/redhat-ads-tech/ea5-components
+----
+
+[WARNING]
+====
+The Terminal has an automatic timeout. When it disconnects it may lose state; if so, repeat the 'git clone' command above to restore/reclone the material needed for the examples
+====
+
 
 
 == Other Things to Try
