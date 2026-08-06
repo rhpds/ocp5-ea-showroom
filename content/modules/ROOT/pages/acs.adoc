@@ -108,7 +108,7 @@ oc adm policy add-scc-to-user privileged system:serviceaccount:acs-init-containe
 
 This allows Pods, and Init Containers, to switch to Privileged to perform actions.
 
-== Running the tests without detection policies in place
+== Running the tests
 
 For the sake of testing we have four specific use-cases represented by different Deployment definitions, each designed to highlight a behaviour now offered within
 RHACS for the monitoring and actioning of Init Containers. These are:
@@ -129,6 +129,32 @@ git clone https://github.com/redhat-ads-tech/ea5-components
 ====
 The Terminal has an automatic timeout. When it disconnects it may lose state; if so, repeat the 'git clone' command above to restore/reclone the material needed for the examples
 ====
+
+In the console type:
+
+[source,bash,role="copypaste"]
+----
+cd ea5-components
+----
+
+Switch to the RHACS console; select the resources pulldown and click on 'local-cluster' as shown below:
+
+image::acs-clusters.png[Selecting the local cluster]
+
+Now click on 'All Namespaces' and select 'acs-init-container-test'. There should be no violations (we have no workloads yet).
+
+In the OpenShift terminal, type:
+
+[source,bash,role="copypaste"]
+----
+oc create -f clean-deployment.yaml
+----
+
+[NOTE]
+====
+This will create a deployment with a single Pod, which also executes an init-container. The init-container performs no dangerous actions (hence clean)
+====
+
 
 
 
