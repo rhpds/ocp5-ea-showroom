@@ -69,10 +69,14 @@ echo ""
 echo "--- Resetting ACS exercise state ---"
 
 # Before You Begin: Delete demo app namespaces
-for ns in juice-shop log4shell webgoat dvwa emojivoto acs-fam-demo acs-init-container-test acs-init-demo; do
+for ns in juice-shop log4shell webgoat dvwa emojivoto acs-fam-demo acs-init-container-test; do
   oc delete ns "$ns" --ignore-not-found 2>/dev/null || true
 done
 echo "  Deleted demo app namespaces"
+
+# Exercise 5: Delete demo SecurityPolicy CRs scoped to acs-init-container-test
+oc delete securitypolicy eap-init-test-fixable-important-cve eap-init-test-privileged-container -n acs --ignore-not-found 2>/dev/null || true
+echo "  Deleted ACS init-container demo policies"
 
 # Exercise 1 (optional): Delete rhel-webserver VM and cloud-init secret
 oc delete vm rhel-webserver -n acs-virt --ignore-not-found 2>/dev/null || true

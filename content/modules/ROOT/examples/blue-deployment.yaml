@@ -1,0 +1,72 @@
+# BLUE: init container violates a Build/Deploy policy because it does what
+# it's SUPPOSED to do. This mimics a very common real-world pattern - e.g.
+# the sysctl-tuning init container used by the Elastic Cloud on Kubernetes
+# (ECK) operator / Elasticsearch Helm charts to raise vm.max_map_count before
+# the main container starts. That legitimately requires privileged: true.
+# Image is the same well-patched image used for Clean, so any CVE-based
+# policy should stay quiet - only the "Privileged Container" style policy
+# should fire. This is the "noise" case: a real hit, but arguably not one an
+# operator wants to act on for every occurrence.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue-app
+  namespace: acs-init-container-test
+  labels:
+    app: blue-app
+    acs-eap-test: init-container
+    container-type-demo: blue
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blue-app
+  template:
+    metadata:
+      labels:
+        app: blue-app
+        acs-eap-test: init-container
+        container-type-demo: blue
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: blue-init
+          # Google distroless "debug-nonroot" - see clean-app for why
+          # (non-root baked in, zero Critical/Important CVEs, no package
+          # manager). Keeps this deployment's only violations attributable
+          # to the "privileged" config below.
+          image: gcr.io/distroless/base-debian12:debug-nonroot
+          command:
+            - /busybox/sh
+            - -c
+            - |
+              echo 'blue-init: tuning vm.max_map_count (legitimate privileged use, mirrors Elasticsearch/ECK init container pattern)'
+              sysctl -w vm.max_map_count=262144 || echo 'sysctl not present in this minimal image; continuing anyway for demo purposes'
+              exit 0
+          securityContext:
+            privileged: true
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+      containers:
+        - name: main
+          # registry.k8s.io/pause is just a keep-alive placeholder, not part
+          # of the init container story - see clean-app for why it was
+          # chosen (pinned tag, non-root baked-in user, no CVEs/package
+          # manager; the one accepted tradeoff is "90-Day Image Age").
+          # Its baked-in user (65535) already satisfies runAsNonRoot without
+          # needing an explicit runAsUser override, even under the
+          # "privileged" SCC (RunAsAny) that blue-init above requires.
+          image: registry.k8s.io/pause:3.9
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}

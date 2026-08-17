@@ -1,0 +1,29 @@
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: eap-init-test-privileged-container
+  namespace: acs
+spec:
+  policyName: "EAP-Init-Test: Privileged Container (Blue/Red)"
+  description: "Demo policy for the RHACS 5.0 EAP init-container test workflow. Fires on any privileged container - main or init - inside the acs-init-container-test namespace. Used to validate that Build/Deploy policy evaluation reaches init containers (Blue = legitimate/noise, Red = illegitimate/true-positive)."
+  rationale: "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc."
+  remediation: "Verify that privileged capabilities are actually required (e.g. sysctl tuning) and cannot be provided via a narrower capability grant."
+  disabled: false
+  categories:
+    - "Privileges"
+  lifecycleStages:
+    - "DEPLOY"
+  eventSource: "NOT_APPLICABLE"
+  severity: "MEDIUM_SEVERITY"
+  enforcementActions: []
+  scope:
+    - namespace: "acs-init-container-test"
+  policyVersion: "1.1"
+  policySections:
+    - sectionName: "privileged"
+      policyGroups:
+        - fieldName: "Privileged Container"
+          booleanOperator: "OR"
+          negate: false
+          values:
+            - value: "true"
