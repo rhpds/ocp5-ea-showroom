@@ -157,14 +157,13 @@ This workflow allows SREs to dynamically construct useful dashboards through nat
 
 By default, the agentic alerts adapter runs in the cluster but does not process alerts. In this exercise, you will enable automatic investigation of critical alerts and review the agent's proposed remediation.
 
-. Enable the alerts adapter to process critical alerts, then restart the adapter pod to pick up the change:
+. Enable the alerts adapter to process critical alerts:
 +
 [source,sh,role=execute]
 ----
 oc get configmap alerts-adapter-config -n openshift-lightspeed -o json \
   | jq '.data["config.yaml"] |= gsub("# +- critical"; "    - critical")' \
   | oc apply -f -
-oc delete pod -l app=lightspeed-agentic-alerts-adapter -n openshift-lightspeed
 ----
 
 . The critical alerts you confirmed earlier (`PaymentErrorRateHigh` and `PodDisruptionBudgetLimit`) will now be automatically detected by the agentic system, analyzed, and remediation plans generated for each one.
