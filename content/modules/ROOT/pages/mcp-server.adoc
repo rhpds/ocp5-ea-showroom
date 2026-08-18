@@ -289,7 +289,9 @@ oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120
 == Other Things to Try
 
 * Ask your AI client _"What tools are available on this MCP server?"_ to see a full list of tools and their descriptions
-* Combine MCP server tools with the agentic operator for AI-driven cluster operations
+* Try asking your AI client to correlate data across tools — for example, _"Find pods with high CPU usage and check their logs for errors"_
+* Explore the network diagnostics toolset by asking about SR-IOV or pod connectivity in the `mcp-demo-network` namespace
+* Ask your AI client to create a summary report of cluster health across multiple namespaces
 
 == Known Limitations
 
