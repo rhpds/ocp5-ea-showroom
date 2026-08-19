@@ -1,0 +1,72 @@
+# CLEAN: init container image has no Critical/Important fixable CVEs, and the
+# deployment spec follows security best practice (non-root, no privilege
+# escalation, all capabilities dropped). Should NOT show up in Vulnerability
+# Management with meaningful findings, and should NOT trigger any Build/Deploy
+# policy.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clean-app
+  namespace: acs-init-container-test
+  labels:
+    app: clean-app
+    acs-eap-test: init-container
+    container-type-demo: clean
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clean-app
+  template:
+    metadata:
+      labels:
+        app: clean-app
+        acs-eap-test: init-container
+        container-type-demo: clean
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: clean-init
+          # Google distroless "debug-nonroot": non-root user (65532) baked
+          # into the image, zero Critical/Important CVEs (just libc6 +
+          # libssl3), and no package manager at all - the busybox shell it
+          # ships covers the one-line demo command below.
+          image: gcr.io/distroless/base-debian12:debug-nonroot
+          command: ["/busybox/sh", "-c", "echo 'clean-init: no fixable CVEs, no policy violations'; exit 0"]
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+      containers:
+        - name: main
+          # registry.k8s.io/pause is just a keep-alive placeholder so the
+          # Deployment has something to run - it is not part of the init
+          # container story. Chosen deliberately: pinned version tag (not
+          # "latest"), non-root user baked into the image (65535:65535),
+          # zero scannable components/CVEs, and no package manager, shell
+          # utilities, etc. to trip any other image-hygiene policy. No
+          # command override needed - its own entrypoint just blocks
+          # forever. The one tradeoff: it is an old, rarely-rebuilt image,
+          # so it will always show a "90-Day Image Age" finding - accepted
+          # deliberately, since every actively-maintained alternative traded
+          # that one finding for a different one instead (Package Manager
+          # in Image, Fixable CVEs, etc.).
+          image: registry.k8s.io/pause:3.9
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}

@@ -7,6 +7,18 @@ instructions for customers participating in the OCP 5 Early Access program.
 
 == Local Development
 
+Build and preview with Podman (requires `podman`):
+
+[source,bash]
+----
+make build   # Antora generate → ./www
+make run     # serve ./www at http://localhost:8080
+make stop    # stop the preview container
+make clean   # remove ./www
+----
+
+Or use the one-shot Antora viewer (build + serve):
+
 [source,bash]
 ----
 podman run --rm -v $PWD:/antora -p 8080:8080 ghcr.io/juliaaano/antora-viewer

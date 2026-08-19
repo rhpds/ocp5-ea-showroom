@@ -1,0 +1,65 @@
+# DIRTY: init container image carries real, known, fixable CVEs
+# (gcr.io/distroless/python3-debian12:debug-nonroot - Critical/Important
+# CVEs in its bundled Python runtime and glibc at time of writing), but the
+# deployment spec itself is well-behaved (non-root, no privilege escalation,
+# all capabilities dropped). Distroless images have no package manager at
+# all, and this one bakes in a non-root user (65532), so the only findings
+# are the CVEs themselves - no root-user or package-manager noise on top.
+# Should show up clearly in Vulnerability Management attributed to the init
+# container, but should NOT trigger the Privileged-Container-style
+# Build/Deploy policy used for Blue/Red.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dirty-app
+  namespace: acs-init-container-test
+  labels:
+    app: dirty-app
+    acs-eap-test: init-container
+    container-type-demo: dirty
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dirty-app
+  template:
+    metadata:
+      labels:
+        app: dirty-app
+        acs-eap-test: init-container
+        container-type-demo: dirty
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: dirty-init
+          image: gcr.io/distroless/python3-debian12:debug-nonroot
+          command: ["/busybox/sh", "-c", "echo 'dirty-init: known CVEs, well-behaved config'; exit 0"]
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+      containers:
+        - name: main
+          # registry.k8s.io/pause is just a keep-alive placeholder, not part
+          # of the init container story - see clean-app for why it was
+          # chosen (pinned tag, non-root baked-in user, no CVEs/package
+          # manager; the one accepted tradeoff is "90-Day Image Age").
+          image: registry.k8s.io/pause:3.9
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}

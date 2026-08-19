@@ -1,0 +1,60 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: rhel-webserver
+  namespace: acs-virt
+  labels:
+    app: rhel-webserver
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: rhel-webserver
+        kubevirt.io/size: small
+    spec:
+      domain:
+        cpu:
+          cores: 1
+          sockets: 1
+          threads: 1
+        devices:
+          autoattachVSOCK: true
+          disks:
+            - bootOrder: 1
+              disk:
+                bus: virtio
+              name: rootdisk
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+          interfaces:
+            - masquerade: {}
+              model: virtio
+              name: default
+          rng: {}
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi: {}
+        machine:
+          type: pc-q35-rhel9.6.0
+        memory:
+          guest: 2Gi
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+      networks:
+        - name: default
+          pod: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - name: rootdisk
+          containerDisk:
+            image: quay.io/rhpds/ocp5-vm-primed:rhel9
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            secretRef:
+              name: rhel-webserver-cloudinit

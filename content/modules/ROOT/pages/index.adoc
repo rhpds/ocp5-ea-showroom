@@ -15,13 +15,12 @@ critical to shaping the GA releases of these technologies.
 
 WARNING: This cluster is owned and operated by Red Hat. *Do not* enter any confidential, non-public, or personally identifiable information (PII) into this environment — including prompts, data, credentials, or any content you would not otherwise share publicly. For more information, refer to the https://www.redhat.com/en/about/all-policies-guidelines[Red Hat Policies and Guidelines^].
 
-This environment covers five main feature areas:
+This environment covers four main feature areas:
 
 * *Agentic Troubleshooting* — Automated root-cause analysis and remediation of application issues triggered by alerts
-* *OpenShift Lightspeed Agentic Updates* — AI-assisted cluster operations using the new agentic operator, agents, and approval policies
 * *MCP Server* — Model Context Protocol servers for OpenShift and ACS, enabling AI agents to interact with cluster and security APIs
 * *MCP Gateway* — Part of Red Hat Connectivity Link, providing federated MCP access, team isolation, authentication, and policy enforcement
-* *Advanced Cluster Security (ACS) 5* — VM scanning via roxagent, file activity monitoring, MCP server integration, and initContainer scanning
+* *Advanced Cluster Security (ACS) 5* — VM scanning, file activity monitoring, Lightspeed risk enrichment, ACS MCP server integration, and init container scanning
 
 == Credentials
 
@@ -32,7 +31,7 @@ This environment covers five main feature areas:
 | OpenShift Console
 | `{openshift_cluster_admin_username}`
 | `{openshift_cluster_admin_password}`
-| https://console-openshift-console.{openshift_cluster_ingress_domain}[Console^]
+| {openshift_cluster_console_url}[Console^]
 
 | ACS Central
 | `admin`
@@ -47,7 +46,7 @@ This environment covers five main feature areas:
 | RHEL 9 VM (acs-virt namespace)
 | `{vm_user}`
 | `{vm_password}`
-| Via OpenShift Console > Virtualization > VirtualMachines
+| {openshift_cluster_console_url}/k8s/ns/acs-virt/kubevirt.io{tilde}v1{tilde}VirtualMachine/rhel9-vm[Virtual Machine in OpenShift Console^]
 |===
 
 == Using This Environment
@@ -59,20 +58,31 @@ Your environment is split into two panels:
 
 === Running Commands
 
-Throughout these instructions, you will see command blocks like this:
+Throughout these instructions, you will see command blocks with a small *play button* (▶) in the upper-left corner:
 
-[source,bash,role="copypaste"]
+[source,sh,role=execute]
 ----
 oc get pods -n openshift-lightspeed
 ----
 
-Click the *copy icon* in the top-right corner of any command block to copy it to your clipboard, then paste it into the terminal on the right.
+Click the *play button* to automatically execute the command in the terminal on the right — no copy/paste needed.
+
+image::showroom-execute-button.png[Play button on command blocks,link=_images/showroom-execute-button.png,window=ea-images]
+
+Some blocks (such as URLs, JSON configurations, or PromQL queries) show a *copy icon* instead — click it to copy the text to your clipboard for pasting elsewhere.
 
 TIP: You can also type commands directly into the terminal. The terminal supports standard shell features like command history (kbd:[Up] / kbd:[Down] arrows), tab completion (kbd:[Tab]), and kbd:[Ctrl+C] to cancel a running command.
 
-=== Accessing the OpenShift Console
+=== Accessing Consoles
 
-Open the OpenShift web console in a new browser tab using the link in the Credentials table above. You will use the console for UI-based exercises (viewing alerts, managing virtualization, reviewing ArgoCD applications, etc.).
+Above the terminal on the right side, you will see tabs for different consoles. Clicking a tab opens the corresponding console in a new browser tab:
+
+* *Terminal* — the default view, already logged in to your cluster as `cluster-admin`
+* *OpenShift Console* — the OpenShift web console for UI-based exercises (viewing alerts, managing virtualization, reviewing ArgoCD applications, etc.)
+* *Red Hat Advanced Cluster Security* — the ACS Central console for vulnerability management, policy enforcement, and security monitoring
+* *OpenShift GitOps* — the Argo CD console for viewing application deployments and sync status. Click *Log in via OpenShift* and use the OpenShift credentials from the table above.
+
+Use the credentials from the table above to log in to each console.
 
 === Using Your Own Tools
 
@@ -89,7 +99,6 @@ CAUTION: This environment is managed by OpenShift GitOps (Argo CD). If you chang
 == Modules
 
 * xref:agentic-troubleshooting.adoc[Agentic Troubleshooting]
-* xref:agentic-updates.adoc[OpenShift Lightspeed Agentic Updates]
 * xref:mcp-server.adoc[MCP Server]
 * xref:mcp-gateway.adoc[MCP Gateway]
 * xref:acs.adoc[Advanced Cluster Security (ACS) 5]

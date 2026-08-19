@@ -2,28 +2,107 @@
 
 include::partial$_attributes.adoc[]
 
+:page-toclevels: 2
+
 == Feature Overview
 
 Red Hat Advanced Cluster Security (ACS) 5 introduces several new capabilities for securing containerized and virtualized workloads:
 
-* *VM Vulnerability Management* — extends RHACS vulnerability scanning to cover virtual machine workloads running on OpenShift Virtualization. The `roxagent` binary runs inside VMs, scans installed packages (RPM/DNF), and reports vulnerabilities to ACS Central via the collector relay over VSOCK. Organizations gain unified vulnerability visibility across both containers and VMs from a single ACS console.
+. *VM Vulnerability Management* — extends RHACS vulnerability scanning to cover virtual machine workloads running on OpenShift Virtualization. The `roxagent` service runs inside VMs, scans installed packages (RPM/DNF), and reports vulnerabilities to ACS Central via Sensor over VSOCK with pull mode. Organizations gain unified vulnerability visibility across both containers and VMs from a single ACS console.
 
-* *File Activity Monitoring (FAM)* — provides runtime file integrity monitoring. Security teams can define custom file paths (with wildcard support) to monitor for access, modification, and rename operations. File activity criteria can be combined with process-level criteria (process name, ancestor, arguments, UID) in deployment and node policies, enabling detection of unauthorized file access patterns required for compliance frameworks such as PCI-DSS.
+. *File Activity Monitoring (FAM)* — provides runtime file integrity monitoring. Security teams can define custom file paths, with wildcard support, to monitor for access, modification, and rename operations. File activity criteria can be combined with process-level criteria such as process name, ancestor, arguments, UID in deployment and node policies, enabling detection of unauthorized file access patterns required for compliance frameworks such as PCI-DSS.
 
-* *Init Container Security Coverage* — RHACS now evaluates init containers for both image scanning and security policies. When a deployment references init containers, their images are scanned for vulnerabilities using the same process as main container images. Build and Deploy stage policies can be configured to include or exclude init containers using the "Filters" menu.
+. *OpenShift Lightspeed Integration for Risk Enrichment* — uses OpenShift Lightspeed to enrich ACS Risk findings with AI-assisted context: why a deployment ranks high, which signals drive the score, and what remediation to prioritize. Security teams can move from a ranked Risk list to an explained, actionable next step without leaving the console workflow.
 
-* *ACS MCP Server* — exposes ACS Vulnerability Management and Configuration Management APIs as MCP tools, allowing AI agents to interact programmatically with security data.
+. *ACS MCP Server* — exposes ACS Vulnerability Management APIs (CVEs, images, deployments, and nodes) and Configuration Management APIs (secured clusters) as MCP tools, allowing AI agents to query security data programmatically. 
 
+. *Init Container Security Coverage* — RHACS now evaluates init containers for both image scanning and security policies. When a deployment references init containers, their images are scanned for vulnerabilities using the same process as main container images. Build and Deploy stage policies can be configured to include or exclude init containers using the "Filters" menu.
+
+Each of these features is covered in more detail in the following sections. Part of each walkthrough will be to discuss how the feature is setup, how it works, and how it can be used to secure your environment.
+
+====
+*The ACS team asks that you provide feedback on the feature by completing the structured feedback form at the end of each exercise.*
+====
 
 == Before You Begin
 
-* Log in to ACS Central: https://central-acs.{openshift_cluster_ingress_domain}[ACS Central^] (admin / `{common_password}`)
-* Verify the Secured Cluster is connected: navigate to *Platform Configuration > Clusters* in ACS Central
-* Verify the VM is running: `oc get vmi -n acs-virt`
-* Check roxagent status on the VM:
-** Connect via the OpenShift console: *Virtualization > VirtualMachines > rhel9-vm > Console*
-** Log in with `{vm_user}` / `{vm_password}`
-** Run: `systemctl status roxagent.service` and `journalctl -u roxagent.service --no-pager -n 20`
+* Register for the link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsIkUQ8Wvp5yHmtrOw/viewform[ACS 5.0 Feedback Form^]. You can track your feedback in the doc and there is a link to the form at the end of each exercise.
+
+* Next, confirm you can open the OpenShift console and ACS Central tabs in the Showroom UI. Log in with these credentials:
++
+[cols="1,1,1,1"]
+|===
+| *Service* | *Username* | *Password* | *Link*
+
+| OpenShift Console
+| `{openshift_cluster_admin_username}`
+| `{openshift_cluster_admin_password}`
+| {openshift_cluster_console_url}[Console^]
+
+| ACS Central
+| `admin`
+| `{common_password}`
+| https://central-acs.{openshift_cluster_ingress_domain}[ACS Central^]
+|===
+
+* Verify the Secured Cluster is connected: navigate to *Platform Configuration > Clusters* in ACS Central and confirm the Secured Cluster is listed.
+
+* Verify the prebuilt VM is running:
++
+[source,sh,subs="attributes",role=execute]
+----
+oc get vmi -n acs-virt
+----
++
+You should see `rhel9-vm` in a `Running` phase.
+
+* Deploy the RHACS / OpenShift Security Roadshow demo applications. 
++
+IMPORTANT: These are intentionally vulnerable workloads and are not recommended for production environments.
++
+[source,sh,subs="attributes",role=execute]
+----
+cd ~/ && git clone https://github.com/mfosterrox/demo-applications.git
+cd ~/demo-applications
+oc apply -f k8s-deployment-manifests/-namespaces/
+oc apply -R -f k8s-deployment-manifests/juice-shop/
+oc apply -R -f k8s-deployment-manifests/log4shell/
+oc apply -R -f k8s-deployment-manifests/webgoat/
+oc apply -R -f k8s-deployment-manifests/dvwa/
+oc apply -R -f k8s-deployment-manifests/acs-fam-demo/
+----
++
+Confirm the File Activity Monitoring (FAM) trigger and a sample vulnerable app are running:
++
+[source,sh,subs="attributes",role=execute]
+----
+oc get deploy,pods -n acs-fam-demo
+oc get deploy,pods -n juice-shop
+----
++
+You should see `fam-target` & `juice-shop` in `Running` phase. 
+
+* Verify the ACS MCP server is available:
++
+[source,sh,subs="attributes",role=execute]
+----
+oc get pods -n acs-mcp
+oc get route -n acs-mcp
+----
++
+Output should look like this:
++
+[source,bash]
+----
+oc get route -n acs-mcp
+NAME                                          READY   STATUS      RESTARTS   AGE
+acs-mcp-server-stackrox-mcp-b79597899-lz64s   1/1     Running     0          3h5m
+copy-central-ca-8jrsn                         0/1     Completed   0          178m
+NAME                          HOST/PORT                                                                    PATH   SERVICES                      PORT    TERMINATION          WILDCARD
+acs-mcp-server-stackrox-mcp   acs-mcp-server-stackrox-mcp-acs-mcp.apps.ocp.2bfz7.sandbox5240.opentlc.com          acs-mcp-server-stackrox-mcp   https   reencrypt/Redirect   None
+----
+
+Awesome! You're ready to start the exercises.
 
 == Hands-on Exercises
 
@@ -284,17 +363,20 @@ All the distroless Images in this namespace are the ones being used within the i
 as well as the normal active container that makes the deployment
 ====
 
-== Other Things to Try
+What you just proved:: ACS 5 scanned the init container images, attributed findings to those init containers, and fired namespace-scoped Build/Deploy policies on Dirty (CVEs), Blue (justified privileged), and Red (CVEs plus unjustified privileged). Clean stayed quiet on both demo policies.
 
-* Navigate to *Vulnerability Management > Results > Virtual Machines* in ACS Central to view VM scan results
-* Check file activity monitoring events in the ACS portal
-* Connect to the ACS MCP server from an MCP client and query policies, violations, and image data
-* Trigger a roxagent scan manually on the VM: `sudo systemctl start roxagent.service`
-* Review the SecuredCluster CR to see FAM and initContainer scanning configuration
+[.step-title]
+Structured feedback (Init Container Security Coverage)
+
+Thank you for completing this exercise! Please help us improve by submitting feedback for Init Container Security Coverage:
+
+link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsIkUQ8Wvp5yHmtrOw/formResponse[ACS 5.0 Feedback Form — Init Container Security Coverage^]
 
 == Key Takeaways
 
 * ACS 5 extends security coverage beyond containers to virtual machines running on OpenShift Virtualization
-* roxagent communicates with the collector via VSOCK, requiring no network configuration inside the VM
+* roxagent listens over VSOCK for Sensor pull requests, requiring no guest network configuration for ACS scanning
 * File activity monitoring provides visibility into security-relevant file access patterns
-* The ACS MCP server enables AI agents to query and act on security data programmatically
+* Lightspeed Risk Enrichment (when available) explains and prioritizes ACS Risk findings with AI-assisted context
+* The ACS MCP server enables AI agents to query secured clusters and CVE findings (deployments and nodes) programmatically
+* Init container scanning extends image and policy coverage to init containers

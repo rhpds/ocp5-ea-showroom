@@ -1,0 +1,35 @@
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: eap-init-test-fixable-important-cve
+  namespace: acs
+spec:
+  policyName: "EAP-Init-Test: Fixable Important+ CVE (Dirty/Red)"
+  description: "Demo policy for the RHACS 5.0 EAP init-container test workflow. Fires when any container image - main or init - in the acs-init-container-test namespace has a fixable CVE with CVSS >= 7. Used to validate that image vulnerability scanning/policy evaluation attributes findings to init containers (Dirty and Red should match; Clean and Blue should not)."
+  rationale: "Fixable vulnerabilities above this severity threshold represent real, addressable risk and should not be shipped in any container, including init containers."
+  remediation: "Rebuild the image against an updated base to pick up the available fix."
+  disabled: false
+  categories:
+    - "Vulnerability Management"
+  lifecycleStages:
+    - "BUILD"
+    - "DEPLOY"
+  eventSource: "NOT_APPLICABLE"
+  severity: "HIGH_SEVERITY"
+  enforcementActions: []
+  scope:
+    - namespace: "acs-init-container-test"
+  policyVersion: "1.1"
+  policySections:
+    - sectionName: "fixable-cve"
+      policyGroups:
+        - fieldName: "Fixed By"
+          booleanOperator: "OR"
+          negate: false
+          values:
+            - value: ".*"
+        - fieldName: "CVSS"
+          booleanOperator: "OR"
+          negate: false
+          values:
+            - value: ">= 7.000000"

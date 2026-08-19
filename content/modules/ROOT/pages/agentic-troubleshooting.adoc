@@ -29,38 +29,42 @@ These issues are designed to leave a causal trail — cascading failures with an
 
 . Verify the troubleshooting applications are deployed. You should expect to see a mix of `Running`, `Completed`, and `ImagePullBackOff` statuses — this is intentional, as these broken states are what the agentic system will investigate:
 +
-[source,bash,role="copypaste"]
+[source,sh,role=execute]
 ----
 oc get pods -n payments && \
 oc get pods -n catalog-service && \
-oc get pods -n inventory
+oc get pods -n inventory && \
+oc get pods -n service-mesh
 ----
 +
 .Expected output (example)
 ----
 NAME                                 READY   STATUS      RESTARTS   AGE
-payments-api-c7c648878-k2rww         1/1     Running     0          4h49m
-postgres-5bd4d575fb-crf6z            2/2     Running     0          4h49m
-reporting-service-6d7f67656f-ktfck   1/1     Running     0          4h39m
-reporting-service-rollout-gg5wc      0/1     Completed   0          4h49m
+payments-api-c7c648878-k2rww         1/1     Running     0          25h
+postgres-5bd4d575fb-crf6z            2/2     Running     0          25h
+reporting-service-6d7f67656f-ktfck   1/1     Running     0          25h
+reporting-service-rollout-gg5wc      0/1     Completed   0          25h
 NAME                                     READY   STATUS    RESTARTS   AGE
-catalog-index-service-5b698694db-rjthx   0/1     Running   0          4h49m
+catalog-index-service-5b698694db-rjthx   0/1     Running   0          25h
 NAME                             READY   STATUS             RESTARTS   AGE
-inventory-app-764d974b4c-8wv75   0/1     ImagePullBackOff   0          4h49m
-inventory-app-764d974b4c-lj4z5   0/1     ImagePullBackOff   0          4h49m
-inventory-app-764d974b4c-wk7vr   0/1     ImagePullBackOff   0          4h49m
+inventory-app-6479f867db-2c25c   0/1     ImagePullBackOff   0          28m
+inventory-app-6479f867db-qgcz4   0/1     ImagePullBackOff   0          28m
+inventory-app-6479f867db-tq5zc   0/1     ImagePullBackOff   0          28m
+NAME                        READY   STATUS    RESTARTS   AGE
+backend-54d6d7b87c-r8qqh    1/1     Running   0          28m
+frontend-6cbbd65959-b7z8m   1/1     Running   0          28m
 ----
 
 . Check that alerts are firing by navigating to *Observe > Alerting* in the OpenShift console. Select *All Projects* from the project dropdown, and remove the *Platform* filter so that both Platform and Application alerts are visible. You should see two Critical alerts (`PaymentErrorRateHigh` and `PodDisruptionBudgetLimit`) along with other Warning and Info alerts that will be used in later exercises.
 +
-image::agentic-troubleshooting-observe-alerting.png[Observe Alerting in OpenShift console,link=_images/agentic-troubleshooting-observe-alerting.png,window=_blank]
+image::agentic-troubleshooting-observe-alerting.png[Observe Alerting in OpenShift console,link=_images/agentic-troubleshooting-observe-alerting.png,window=ea-images]
 
 
 == Hands-on Exercises
 
 === Exercise 1: Investigate a Timeout Issue (User-Initiated)
 
-In this exercise, you will test Lightspeed's ability to troubleshoot a cluster issue that does not have an associated Prometheus alert — a timeout connection problem.
+In this exercise, you will test Lightspeed's ability to troubleshoot a cluster issue that does not have an associated Prometheus alert — a timeout connection problem in the `service-mesh` namespace, where a frontend pod is failing to reach a backend service due to a misconfigured NetworkPolicy.
 
 . Open the OpenShift console and navigate to *Observe > Metrics* to get familiar with the current state. Try running this example query to see the top CPU consumers:
 +
@@ -73,23 +77,23 @@ topk(10,
 )
 ----
 +
-image::agentic-troubleshooting-metrics-console.png[Observe Metrics UI,link=_images/agentic-troubleshooting-metrics-console.png,window=_blank]
+image::agentic-troubleshooting-metrics-console.png[Observe Metrics UI,link=_images/agentic-troubleshooting-metrics-console.png,window=ea-images]
 
 . Open the OpenShift Lightspeed chat by clicking the chat icon in the bottom right of the console.
 
 . Select the *troubleshooting* mode from the mode selector.
 +
-image::agentic-troubleshooting-mode-selector.png[Lightspeed troubleshooting mode selector,link=_images/agentic-troubleshooting-mode-selector.png,window=_blank]
+image::agentic-troubleshooting-mode-selector.png[Lightspeed troubleshooting mode selector,link=_images/agentic-troubleshooting-mode-selector.png,window=ea-images]
 
 . Ask Lightspeed to investigate the timeout issue:
 +
-_"Investigate the timeout connection in the payments namespace"_
+_"Investigate the timeout connection in the service-mesh namespace"_
 +
-Lightspeed will query the MCP server, examine pod logs, correlate Prometheus metrics, and identify the root cause.
+Lightspeed will query the MCP server, examine pod logs and events, and identify the root cause — a NetworkPolicy blocking the frontend from reaching the backend service.
 +
-NOTE: During investigation, Lightspeed may prompt you to approve certain tools such as `pod_exec`. More powerful tools require explicit approval before the agent can use them. Click *Approve* to allow Lightspeed to proceed.
+NOTE: During investigation, Lightspeed may prompt you to approve certain tools such as `pod_exec`. More powerful tools require explicit approval before the agent can use them. Click *Approve* to allow Lightspeed to proceed. It is normal for `pod_exec` to occasionally fail — security-hardened pods on OpenShift use minimal container images that may not include common shell utilities like `ss`, `netstat`, or `dig`. Lightspeed uses any available signals from a wide range of components (pod logs, events, Prometheus metrics, resource state) to analyze and correlate issues, so a failed exec does not prevent a successful investigation.
 +
-image::agentic-troubleshooting-tool-approval.png[Tool approval prompt in Lightspeed,link=_images/agentic-troubleshooting-tool-approval.png,window=_blank]
+image::agentic-troubleshooting-tool-approval.png[Tool approval prompt in Lightspeed,link=_images/agentic-troubleshooting-tool-approval.png,window=ea-images]
 
 . Continue the conversation with follow-up prompts:
 +
@@ -97,7 +101,7 @@ _"Identify recent changes that may have caused this and suggest remediation"_
 
 . Review the mitigation plan that Lightspeed provides. It should include correlation evidence and a read-only remediation plan.
 +
-image::agentic-troubleshooting-mitigation-plan.png[Lightspeed mitigation plan output,link=_images/agentic-troubleshooting-mitigation-plan.png,window=_blank]
+image::agentic-troubleshooting-mitigation-plan.png[Lightspeed mitigation plan output,link=_images/agentic-troubleshooting-mitigation-plan.png,window=ea-images]
 +
 NOTE: Do not execute the remediation steps manually. In Exercise 4, the agentic system will provide a more structured way to review and execute remediation plans with full audit trails.
 
@@ -113,11 +117,11 @@ This exercise validates Lightspeed's ability to correlate standard infrastructur
 +
 _"Investigate the root cause of the firing PodDisruptionBudgetLimit alert"_
 +
-Lightspeed will use multiple tools, examine pod state and logs, correlate Prometheus metrics, and identify the root cause (a typo in the image name, it should have been `registry.redhat.io/ubi9/ubi:latest`).
+Lightspeed will use multiple tools, examine pod state and logs, correlate Prometheus metrics, and identify the root cause (a typo in the image tag `laetst` — it should have been `latest`).
 
 . Review the response. Lightspeed should provide a mitigation plan based on relevant in-cluster data points — Kubernetes resource state, pod logs, and Prometheus metrics.
 +
-image::agentic-troubleshooting-alert-investigation.png[Lightspeed alert investigation results,link=_images/agentic-troubleshooting-alert-investigation.png,window=_blank]
+image::agentic-troubleshooting-alert-investigation.png[Lightspeed alert investigation results,link=_images/agentic-troubleshooting-alert-investigation.png,window=ea-images]
 
 Whether the starting point is a firing Prometheus alert or a vague symptom like "things are slow," Lightspeed follows the same investigative process — correlating multiple data sources to surface the root cause. This makes it equally effective for known alerts and novel issues that don't yet have monitoring coverage.
 
@@ -127,7 +131,7 @@ OpenShift Lightspeed can dynamically generate interactive Perses charts directly
 
 . First, create a Perses dashboard to receive exported charts. Navigate to *Observe > Dashboards (Perses)* and click *Create* to create a new dashboard named `Investigation Hub`. Select the `payments` namespace.
 +
-image::agentic-troubleshooting-create-dashboard.png[Creating a Perses dashboard,link=_images/agentic-troubleshooting-create-dashboard.png,window=_blank]
+image::agentic-troubleshooting-create-dashboard.png[Creating a Perses dashboard,link=_images/agentic-troubleshooting-create-dashboard.png,window=ea-images]
 
 . In the Lightspeed chat (still in *troubleshooting* mode), ask for a visualization related to your current investigation:
 +
@@ -141,11 +145,11 @@ _"Which pods were crashlooping in the last 5 minutes? Use Prometheus and visuali
 
 . Verify that an interactive Perses chart is rendered directly in the chat UI.
 +
-image::agentic-troubleshooting-perses-inline.png[Inline Perses chart in Lightspeed chat,link=_images/agentic-troubleshooting-perses-inline.png,window=_blank]
+image::agentic-troubleshooting-perses-inline.png[Inline Perses chart in Lightspeed chat,link=_images/agentic-troubleshooting-perses-inline.png,window=ea-images]
 
 . Click the *Add To Dashboard* button on the chart to export it to your `Investigation Hub` dashboard. The chart is now persisted and can be revisited at any time under *Observe > Dashboards (Perses)* to see updated metrics.
 +
-image::agentic-troubleshooting-add-to-dashboard.png[Add To Dashboard button on inline Perses chart,link=_images/agentic-troubleshooting-add-to-dashboard.png,window=_blank]
+image::agentic-troubleshooting-add-to-dashboard.png[Add To Dashboard button on inline Perses chart,link=_images/agentic-troubleshooting-add-to-dashboard.png,window=ea-images]
 
 This workflow allows SREs to dynamically construct useful dashboards through natural language — no need to hand-craft PromQL queries or manually configure chart panels. As investigations evolve, charts can be added incrementally, building a living dashboard that captures the metrics most relevant to the issue at hand. These dashboards persist beyond the chat session and continue to show updated metrics, serving as a reference for ongoing monitoring or future incidents.
 
@@ -153,31 +157,48 @@ This workflow allows SREs to dynamically construct useful dashboards through nat
 
 By default, the agentic alerts adapter runs in the cluster but does not process alerts. In this exercise, you will enable automatic investigation of critical alerts and review the agent's proposed remediation.
 
-. Enable the alerts adapter to process critical alerts, then restart the adapter pod to pick up the change:
+. Enable the alerts adapter to process critical alerts:
 +
-[source,bash,role="copypaste"]
+[source,sh,role=execute]
 ----
 oc get configmap alerts-adapter-config -n openshift-lightspeed -o json \
   | jq '.data["config.yaml"] |= gsub("# +- critical"; "    - critical")' \
   | oc apply -f -
-oc delete pod -l app=lightspeed-agentic-alerts-adapter -n openshift-lightspeed
 ----
 
 . The critical alerts you confirmed earlier (`PaymentErrorRateHigh` and `PodDisruptionBudgetLimit`) will now be automatically detected by the agentic system, analyzed, and remediation plans generated for each one.
 
 . Navigate to the *Agentic Runs* UI to see the investigations in progress. The runs may initially be in the *Analyzing* phase — you can watch the agent work in real time as it queries cluster state, correlates data, and builds its findings.
 +
-image::agentic-troubleshooting-agentic-runs-list.png[Agentic Runs UI showing investigations,link=_images/agentic-troubleshooting-agentic-runs-list.png,window=_blank]
+image::agentic-troubleshooting-agentic-runs-list.png[Agentic Runs UI showing investigations,link=_images/agentic-troubleshooting-agentic-runs-list.png,window=ea-images]
 
-. Once an AgenticRun moves to the *Proposed* phase, select it to drill into the step-by-step findings and remediation plan.
+. You can also manage AgenticRuns from the command line using the `oc agentic` CLI plugin. List all runs:
 +
-image::agentic-troubleshooting-agentic-run-detail.png[AgenticRun detail with proposed remediation,link=_images/agentic-troubleshooting-agentic-run-detail.png,window=_blank]
-
-. Review the proposed remediation steps. Select *Option 1* — rollback to the last known good version (v1.0.1) — and click the *Execute remediation* button to authorize the change. It will ask you once again to confirm the execution. Click *Execute Remediation* once more to confirm.
-
-. Once the remediation and validation is complete, the AgenticRun status will update to *Completed* with a detailed post-execution summary.
+[source,sh,role=execute]
+----
+oc agentic run list
+----
 +
-image::agentic-troubleshooting-execution-complete.png[Completed AgenticRun with execution summary,link=_images/agentic-troubleshooting-execution-complete.png,window=_blank]
+Get the details of the `PaymentErrorRateHigh` run:
++
+[source,sh,role=execute]
+----
+oc agentic run get $(oc agentic run list -o json | jq -r '.items[].metadata.name' | grep -i payment | head -1)
+----
++
+The `oc agentic` CLI supports the full lifecycle of AgenticRuns: approve or deny proposed remediations (`oc agentic run approve` / `oc agentic run deny`), watch live agent logs (`oc agentic run logs`), or create a new run on demand (`oc agentic run create`). Run `oc agentic --help` to explore all available commands.
+
+. Once an AgenticRun moves to the *Proposed* phase, open the run corresponding to the `PaymentErrorRateHigh` alert to drill into the step-by-step findings and remediation plan.
++
+image::agentic-troubleshooting-agentic-run-detail.png[AgenticRun detail for PaymentErrorRateHigh with proposed remediation,link=_images/agentic-troubleshooting-agentic-run-detail.png,window=ea-images]
+
+. Review the proposed remediation steps. Select the option that recommends rolling back to the last known good version — and click the *Execute remediation* button to authorize the change. It will ask you once again to confirm the execution. Click *Execute Remediation* once more to confirm.
+
+. Once the remediation is executed, review the post-execution summary.
++
+image::agentic-troubleshooting-execution-complete.png[AgenticRun with execution summary,link=_images/agentic-troubleshooting-execution-complete.png,window=ea-images]
++
+NOTE: The remediation may show errors and move into the *Escalating* state. The underlying issue should still be resolved — return to *Observe > Alerting* to verify the `PaymentErrorRateHigh` alert has stopped firing. The escalation workflow is designed for cases where automated remediation is insufficient, allowing operators to open a support case with the diagnostic details collected during the investigation.
 
 This is the full agentic loop — from alert detection through investigation, proposal, approval, and execution — with a human in the loop at every decision point. The system handles the heavy lifting of data correlation and remediation execution, while the operations team retains full control over what changes are made to the cluster.
 

@@ -27,6 +27,9 @@ www/
 # Ignore sensitive or private information
 secrets.json
 
+# Local-only notes (not for GitHub)
+LOCAL-FORK-SETUP.md
+
 # Ignore compiled binaries or executables
 *.exe
 *.dll

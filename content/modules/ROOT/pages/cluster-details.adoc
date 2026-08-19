@@ -28,7 +28,6 @@ or troubleshooting.
 ** ApprovalPolicy CR for execution gate control
 ** Agentic console plugin for UI-driven troubleshooting
 ** CRDs installed via a sync Job from upstream GitHub
-** CVO override Job to prevent CVO from reverting agentic CRDs
 
 == Red Hat Advanced Cluster Security (ACS) 5
 
@@ -70,18 +69,17 @@ or troubleshooting.
 * *MCPServerRegistrations* with prefixed tool names for federation
 * *AuthPolicy* enforcing JWT bearer token authentication via Keycloak
 * *Keycloak setup Job* creates an `mcp-gateway` client and test users (`user1`, `user2`) in the Keycloak realm
+* *Jaeger* (v2.20.0) for OpenTelemetry distributed tracing of MCP requests
 
-=== Team-Isolated Gateways (Scenario 4)
+=== Team-Based Access Control
 
-* *Team A* (`team-a-mcp` namespace)
-** Own Gateway, MCPGatewayExtension, and broker
-** Inventory + accounts mock servers
-** OpenShift Route for HTTPS access (`team-a-mcp.apps...`)
-* *Team B* (`team-b-mcp` namespace)
-** Own Gateway, MCPGatewayExtension, and broker
-** Payments mock server only
-** OpenShift Route for HTTPS access (`team-b-mcp.apps...`)
-* Each team has complete isolation — separate Gateway objects, config secrets, and broker deployments
+* Team isolation via *Keycloak RBAC* — not separate namespaces
+* Keycloak clients per MCPServerRegistration with tool-scoped roles
+* Groups (`team-a`, `team-b`) map to server tool subsets:
+** `user1` (team-a): inventory + accounts tools
+** `user2` (team-b): payments tools only
+* *AuthPolicy* on the gateway uses CEL expressions for tool-level authorization
+* *Per-user rate limiting* (30 req/min) via RateLimitPolicy with JWT `sub` claim counter
 
 == Cluster Observability
 
@@ -89,6 +87,14 @@ or troubleshooting.
 * *UIPlugin* for Monitoring/Perses dashboards
 * *PersesGlobalDatasource* configured for Thanos querier
 * User workload monitoring enabled (`enableUserWorkload: true`)
+
+== Demo workload sets (keep these aligned)
+
+This environment uses three distinct application sets:
+
+* *ACS / Roadshow apps* — participant-deployed from https://github.com/mfosterrox/demo-applications[demo-applications^] during the ACS exercise (juice-shop, log4shell, webgoat, dvwa, acs-fam-demo). FAM uses the UBI `fam-target` deployment in the `acs-fam-demo` namespace.
+* *Agentic Troubleshooting apps* — preinstalled broken workloads for Lightspeed investigations in the existing `payments` namespace (see below)
+* *MCP demo / mock servers* — preinstalled `mcp-demo-*` namespaces and `mock-mcp-servers` for MCP Server / MCP Gateway exercises
 
 == Agentic Troubleshooting Scenarios (`payments` namespace)
 
@@ -108,3 +114,16 @@ or troubleshooting.
 * Realm: `keycloak`
 * MCP Gateway client: `mcp-gateway` (confidential client with direct access grants)
 * Test users: `user1` / `user1pass`, `user2` / `user2pass`
+
+== Resetting the Environment
+
+To reset the cluster to its pre-exercise state after a tester has completed the exercises, run the reset script from the showroom terminal:
+
+[source,sh,role=execute]
+----
+curl -fsSL https://raw.githubusercontent.com/rhpds/ocp5-ea-showroom/main/reset.sh | bash
+----
+
+This script is idempotent and safe to run multiple times. It reverts exercise-specific changes including scaling demo workloads back up, re-commenting critical alerts, deleting AgenticRuns, removing ACS demo namespaces and VMs, and restoring the troubleshooting scenario to its initial state.
+
+NOTE: BYOM (Bring Your Own Model) changes are not reverted by the reset script. To revert BYOM changes, re-enable ArgoCD auto-sync on the `app-of-apps`, `openshift-lightspeed`, and `openshift-agentic-lightspeed` applications.
