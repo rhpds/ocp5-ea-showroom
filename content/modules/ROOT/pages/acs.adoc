@@ -152,7 +152,7 @@ Each VM to be scanned must meet the following requirements:
 * The VM has internet access to download repository-to-Common Platform Enumeration (CPE) mappings.
 * DNF is installed.
 * `roxagent` runs with privileges sufficient to scan package databases and expose index reports over VSOCK (typically root or sudo).
-* At least one DNF transaction (for example, `dnf install`) has been executed on the system to prepopulate required metadata.
+* At least one DNF transaction (for example, `dnf install`) has been executed on the system to populate required metadata.
 
 [.step-title]
 Verifying and reviewing the prebuilt VM in ACS
@@ -685,7 +685,7 @@ For this exercise we will be using the OCP and RHACS interfaces.
 
 == Logging on to the OpenShift 5 Cluster
 
-Using the following link, log into the OpenShift cluster - https://console-openshift-console.{openshift_cluster_ingress_domain}[OpenShift cluster^] using the credentials
+Using the following link, log into the OpenShift cluster - {openshift_cluster_console_url}[OpenShift cluster^] using the credentials
 user:{openshift_cluster_admin_username} password:{openshift_cluster_admin_password}
 
 Now open the OpenShift Lightspeed dialog (if it is not already open). This is the icon at the bottom right of the interface. We are going to
@@ -724,9 +724,9 @@ The MCP server requires approval, so approve when it asks you.
 On the left hand navigation, choose 'Projects' and then acs-init-container-tests. All of the examples will be executed in this project to allow you to observe the results simply in
 the ACS console.
 
-Now click on the '>_' icon at the top right to open the integrated console in the User Interface. We will use this to interact with the project for simplicities sake.
+Now click on the '>_' icon at the top right to open the integrated Terminal in the User Interface. We will use this to interact with the project for simplicities sake.
 
-In the terminal type:
+In the Terminal, type:
 
 [source,bash,role="copypaste"]
 ----
@@ -742,7 +742,7 @@ oc get pods
 
 == Enabling Privileged access for the tests
 
-In the console, type:
+In the Terminal, type:
 
 [source,bash,role="copypaste"]
 ----
@@ -761,7 +761,7 @@ RHACS for the monitoring and actioning of Init Containers. These are:
 .. 'Blue' deployment - runs an Init Container that performs a Privileged action that has justification 
 .. 'Red' deployment - runs an Init Container that uses an unpatched Image with known CVEs and performs a Privileged action that has no justification 
 
-In the console of the OCP User Interface type:
+In the Terminal, type:
 
 [source,bash,role="copypaste"]
 ----
@@ -770,17 +770,17 @@ git clone https://github.com/redhat-ads-tech/ea5-components
 
 [WARNING]
 ====
-The Terminal has an automatic timeout. When it disconnects it may lose state; if so, repeat the 'git clone' command above to restore/reclone the material needed for the examples
+The Terminal has an automatic timeout. When it disconnects it may lose state; if so, repeat the 'git clone' command above to restore or re-clone the material needed for the examples
 ====
 
-In the console type:
+In the Terminal, type:
 
 [source,bash,role="copypaste"]
 ----
 cd ea5-components
 ----
 
-We will now apply two additional policies specific to this namespace only; in the console type:
+We will now apply two additional policies specific to this namespace only; in the Terminal, type:
 
 [source,bash,role="copypaste"]
 ----
@@ -788,7 +788,7 @@ oc create -f fixable-important-cve.yaml
 oc create -f privileged-init-container.yaml
 ----
 
-While in the console have a look at these two policy definitions. Specifically, for privileged-init-container.yaml note:
+While in the Terminal, have a look at these two policy definitions. Specifically, for privileged-init-container.yaml note:
 
 [source,bash]
 ----
@@ -838,7 +838,7 @@ Note the definition of the init-container; RHACS has detected and scanned this i
 
 image::acs-deployment-clean.png[Clean deployment definition]
 
-Switch to the OpenShift console, and type the following:
+Switch to the OpenShift Terminal, and type the following:
 
 [source,bash,role="copypaste"]
 ----
@@ -850,7 +850,7 @@ oc create -f dirty-deployment.yaml
 If the Terminal has timed out, or if you have closed and reopened it, make sure to perform the clone operation stated above, cd into the ea5-component directory *and* set the project to acs-init-container-test, as the Terminal will default to a clean file system and the openshift-terminal project
 ====
 
-Once the Application has deployed, click on *Workloads* and *Topology*. Click on the *dirty-app* roundel, then click on the Pod nasme displayed in the right-hand content window.
+Once the Application has deployed, click on *Workloads* and *Topology*. Click on the *dirty-app* roundel, then click on the Pod name displayed in the right-hand content window.
 
 In the Pod content panel, click on *Logs*, then click on the pulldown for the Containers; select *dirty-init*
 
@@ -896,7 +896,7 @@ Once this has succeeded, click on *Workloads*, *Topology* and make sure the Depl
 This example provides an init-container that switches to privileged and performs a legitimate action.
 ====
 
-Switch to the RHACS interface. Click on *Dashboard* (or Violations if you wish), select the local-cluster, and then the namespace *acs-init-comtainer-test* as before.
+Switch to the RHACS interface. Click on *Dashboard* (or Violations if you wish), select the local-cluster, and then the namespace *acs-init-container-test* as before.
 
 [NOTE]
 ====
