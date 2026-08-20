@@ -672,181 +672,262 @@ link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsI
 
 === Exercise 5: Init Container Security Coverage
 
-Init containers run setup work and then exit before the application starts. Because they use the same cluster credentials and image pull path as the rest of the Pod, a vulnerable or over-privileged init image can compromise the workload before the main container ever runs. ACS 5 scans init container images and evaluates Build and Deploy policies against them, with the same workflow you already use for application containers.
+This exercise will walk you through and demonstrate the capabilities in OCP5 and RHACS (5) for the scanning of Init Containers.
 
-In this exercise you will deploy four workloads that isolate those capabilities, then review the violations ACS attributes to the init containers.
+Init Containers are standalone containers executed as part of a Kubernetes deployment. They occur before the actual Pods of the deployment are created, and are used
+to perform various initialisation tasks needed by the Pod, namely operations like file initialisation, DB population and the like.
 
-The four use cases are:
+As such they are an attack vector for exploitation; RHACS now has capabilities for scanning and acting upon exploits.
 
-* *Clean* -- an init container with nothing out of the ordinary
-* *Dirty* -- an init container based on an image with known CVEs
-* *Blue* -- an init container that performs a privileged action with justification
-* *Red* -- an init container that uses an unpatched image with known CVEs and performs a privileged action with no justification
+Unlike Pods, Init Containers are not resident; once executed they are removed, so the runtime policies offered by RHACS focus on process execution and baseline comparisons.
 
-[.step-title]
-Prepare the test project and policies
+For this exercise we will be using the OCP and RHACS interfaces. 
 
-.Procedure
-. Create a project and grant the default service account the `privileged` SCC (required for Blue and Red):
-+
-[source,sh,subs="attributes",role=execute]
+== Logging on to the OpenShift 5 Cluster
+
+Using the following link, log into the OpenShift cluster - https://console-openshift-console.{openshift_cluster_ingress_domain}[OpenShift cluster^] using the credentials
+user:{openshift_cluster_admin_username} password:{openshift_cluster_admin_password}
+
+Now open the OpenShift Lightspeed dialog (if it is not already open). This is the icon at the bottom right of the interface. We are going to
+ask OpenShift Lightspeed to create a link in the console (the 3x3 square icon at the top) to allow us to go to the ACS console quickly from the OpenShift interface. 
+
+[source,bash,role="copypaste"]
 ----
-oc new-project acs-init-container-test
-oc adm policy add-scc-to-user privileged -z default -n acs-init-container-test
-----
-
-. Confirm the project has no workloads:
-+
-[source,sh,subs="attributes",role=execute]
-----
-oc get pods -n acs-init-container-test
+can you create a global consolelink that has the label 'ACS' and points to the route for the ACS console. Add the Red Hat icon to the consolelink
 ----
 
-. Apply two additional policies scoped to this namespace only:
-+
-[source,yaml,role=execute]
-----
-oc apply -f - <<'EOF'
-include::example$fixable-important-cve.yaml[]
-EOF
-----
-+
-[source,yaml,role=execute]
-----
-oc apply -f - <<'EOF'
-include::example$privileged-init-container.yaml[]
-EOF
-----
+Once it is completed, click on the 3x3 icon at the top; you should see this:
 
-. Review the two policy definitions. For the privileged policy, note:
-+
-[source,text]
+image::acs-initcontainer-menu.png[The ACS console link in the OpenShift application menu]
+
+=== Logging into the RHACS console
+
+Having added the link to the Console shortcuts, click on the 3x3 icon at the top right of the OCP User Interface and click on 'ACS'. This will open a tab with
+the ACS console in it.
+
+Log into the ACS console; username is *admin* and the password can be obtained, using the OpenShift User Interface, by clicking on *Workloads*, *Secrets*, setting the project to *ACS*
+and clicking on the *central-admin-password* secret. You can use the 'copy' icon next to the *password* field to copy the password to the clipboard.
+
+image::acs-console.png[The ACS console]
+
+== Using OpenShift Lightspeed and the OpenShift User Interface to prepare the tests
+
+In the OpenShift lightspeed dialog, enter the following:
+
+[source,role="copypaste"]
 ----
-policyName: "EAP-Init-Test: Privileged Container (Blue/Red)"
-description: "Demo policy for the RHACS 5.0 EAP init-container test workflow. Fires on any privileged container - main or init - inside the acs-init-container-test namespace. Used to validate that Build/Deploy policy evaluation reaches init containers (Blue = legitimate/noise, Red = illegitimate/true-positive)."
-rationale: "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc."
-remediation: "Verify that privileged capabilities are actually required (e.g. sysctl tuning) and cannot be provided via a narrower capability grant."
-----
-+
-For the CVE policy, note:
-+
-[source,text]
-----
-policyName: "EAP-Init-Test: Fixable Important+ CVE (Dirty/Red)"
-description: "Demo policy for the RHACS 5.0 EAP init-container test workflow. Fires when any container image - main or init - in the acs-init-container-test namespace has a fixable CVE with CVSS >= 7. Used to validate that image vulnerability scanning/policy evaluation attributes findings to init containers (Dirty and Red should match; Clean and Blue should not)."
-rationale: "Fixable vulnerabilities above this severity threshold represent real, addressable risk and should not be shipped in any container, including init containers."
-remediation: "Rebuild the image against an updated base to pick up the available fix."
+create a new project for me called acs-init-container-test
 ----
 
-. In ACS Central, open the *Dashboard*. Set *Resources* to `local-cluster` and the namespace filter to `acs-init-container-test`.
-+
-image::acs-clusters.png[ACS Dashboard resource filter set to local-cluster,link=_images/acs-clusters.png,window=ea-images]
-+
-There should be no violations yet. You have policies, but no workloads.
+The MCP server requires approval, so approve when it asks you.
 
-NOTE: The ACS Dashboard is timestamped and does not auto-refresh. Reload the page after each deployment before you judge the result.
+On the left hand navigation, choose 'Projects' and then acs-init-container-tests. All of the examples will be executed in this project to allow you to observe the results simply in
+the ACS console.
 
-[.step-title]
-Run the Clean scenario
+Now click on the '>_' icon at the top right to open the integrated console in the User Interface. We will use this to interact with the project for simplicities sake.
 
-.Procedure
-. Deploy the Clean workload:
-+
-[source,yaml,role=execute]
+In the terminal type:
+
+[source,bash,role="copypaste"]
 ----
-oc apply -f - <<'EOF'
-include::example$clean-deployment.yaml[]
-EOF
-----
-+
-This creates `clean-app` with a `clean-init` init container that performs no dangerous actions.
-
-. In the OpenShift console, go to *Workloads > Deployments*, open `clean-app` in `acs-init-container-test`, and select the *YAML* tab.
-+
-Confirm the `clean-init` definition. ACS has detected and scanned this init container and should not raise the two demo policies.
-+
-image::acs-deployment-clean.png[Clean deployment YAML showing the clean-init container,link=_images/acs-deployment-clean.png,window=ea-images]
-
-. Return to the ACS Dashboard (still filtered to `local-cluster` / `acs-init-container-test`) and reload the page.
-+
-You should see at most a low policy violation. *Active images at most risk* lists two images. One of them is the init image, `distroless/base-debian12`.
-
-[.step-title]
-Run the Dirty scenario
-
-.Procedure
-. Deploy the Dirty workload:
-+
-[source,yaml,role=execute]
-----
-oc apply -f - <<'EOF'
-include::example$dirty-deployment.yaml[]
-EOF
+oc project acs-init-container-test
 ----
 
-. In the OpenShift console, go to *Workloads > Topology*, select the `dirty-app` workload, then open the running Pod. On the *Logs* tab, use the container pulldown and select `dirty-init`.
-+
-NOTE: A Pod can have more than one container. The pulldown includes init containers, so you can read `dirty-init` even after it has completed.
-+
-The log shows a well-behaved init container. The risk is the image, not the command it ran.
+Check the project has no workloads using:
 
-. Reload the ACS Dashboard with the same cluster and namespace filters.
-+
-ACS has scanned the Dirty init container during deploy and should now show *High* violations. Click the *High* panel and confirm the findings are attributed to the init container, not only the pause main container.
-+
-image::acs-deployment-dirty.png[ACS violation details for the Dirty init container,link=_images/acs-deployment-dirty.png,window=ea-images]
-+
-NOTE: RHACS detected and reported image violations on the init container of the Dirty deployment.
-
-[.step-title]
-Run the Blue scenario
-
-.Procedure
-. Deploy the Blue workload:
-+
-[source,yaml,role=execute]
+[source,bash,role="copypaste"]
 ----
-oc apply -f - <<'EOF'
-include::example$blue-deployment.yaml[]
-EOF
-----
-+
-This init container switches to privileged and performs a legitimate action (`sysctl` for `vm.max_map_count`).
-
-. In *Workloads > Topology*, confirm `blue-app` is running (blue border on the workload). Open the Pod *Logs* tab and select `blue-init`.
-
-. Reload the ACS Dashboard (`local-cluster`, namespace `acs-init-container-test`).
-+
-You should see additional policy violations for the privileged init container, and a change in *Risk Priority* under *Active images at most risk*.
-+
-NOTE: Blue is a real privileged-policy hit with an operational justification. Treat it as the noise case when you compare it to Red.
-
-[.step-title]
-Run the Red scenario
-
-.Procedure
-. Deploy the Red workload:
-+
-[source,yaml,role=execute]
-----
-oc apply -f - <<'EOF'
-include::example$red-deployment.yaml[]
-EOF
+oc get pods
 ----
 
-. In *Workloads > Topology*, open `red-app`, then the running Pod, then *Logs* for `red-init`. The log should read:
-+
+== Enabling Privileged access for the tests
+
+In the console, type:
+
+[source,bash,role="copypaste"]
+----
+oc adm policy add-scc-to-user privileged system:serviceaccount:acs-init-container-test:default
+----
+
+This allows Pods, and Init Containers, to switch to Privileged to perform actions.
+
+== Running the tests
+
+For the sake of testing we have four specific use-cases represented by different Deployment definitions, each designed to highlight a behaviour now offered within
+RHACS for the monitoring and actioning of Init Containers. These are:
+
+.. 'Clean' deployment - runs an Init Container that has nothing out of the ordinary in it
+.. 'Dirty' deployment - runs an Init Container that does something that is a violation
+.. 'Blue' deployment - runs an Init Container that performs a Privileged action that has justification 
+.. 'Red' deployment - runs an Init Container that uses an unpatched Image with known CVEs and performs a Privileged action that has no justification 
+
+In the console of the OCP User Interface type:
+
+[source,bash,role="copypaste"]
+----
+git clone https://github.com/redhat-ads-tech/ea5-components
+----
+
+[WARNING]
+====
+The Terminal has an automatic timeout. When it disconnects it may lose state; if so, repeat the 'git clone' command above to restore/reclone the material needed for the examples
+====
+
+In the console type:
+
+[source,bash,role="copypaste"]
+----
+cd ea5-components
+----
+
+We will now apply two additional policies specific to this namespace only; in the console type:
+
+[source,bash,role="copypaste"]
+----
+oc create -f fixable-important-cve.yaml
+oc create -f privileged-init-container.yaml
+----
+
+While in the console have a look at these two policy definitions. Specifically, for privileged-init-container.yaml note:
+
+[source,bash]
+----
+  policyName: "EAP-Init-Test: Privileged Container (Blue/Red)"
+  description: "Demo policy for the RHACS 5.0 EAP init-container test workflow. Fires on any privileged container - main or init - inside the acs-init-container-test namespace. Used to validate that Build/Deploy policy evaluation reaches init containers (Blue = legitimate/noise, Red = illegitimate/true-positive)."
+  rationale: "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc."
+  remediation: "Verify that privileged capabilities are actually required (e.g. sysctl tuning) and cannot be provided via a narrower capability grant."
+----
+
+And for fixable-important-cve.yaml:
+
+[source,bash]
+----
+  policyName: "EAP-Init-Test: Fixable Important+ CVE (Dirty/Red)"
+  description: "Demo policy for the RHACS 5.0 EAP init-container test workflow. Fires when any container image - main or init - in the acs-init-container-test namespace has a fixable CVE with CVSS >= 7. Used to validate that image vulnerability scanning/policy evaluation attributes findings to init containers (Dirty and Red should match; Clean and Blue should not)."
+  rationale: "Fixable vulnerabilities above this severity threshold represent real, addressable risk and should not be shipped in any container, including init containers."
+  remediation: "Rebuild the image against an updated base to pick up the available fix."
+----
+
+Switch to the RHACS console; select the resources pulldown and click on 'local-cluster' as shown below:
+
+image::acs-clusters.png[Selecting the local cluster]
+
+Now click on 'All Namespaces' and select 'acs-init-container-test'. There should be no violations (we have no workloads yet).
+
+In the OpenShift terminal, type:
+
+[source,bash,role="copypaste"]
+----
+oc create -f clean-deployment.yaml
+----
+
+[NOTE]
+====
+This will create a deployment with a single Pod, which also executes an init-container. The init-container performs no dangerous actions (hence clean)
+====
+
+Switch to the RHACS console. Make sure the 'Resources' is set to 'local-cluster', and select 'acs-init-container-test' in the Namespace pulldown.
+
+You should see the dashboard which shows 1 low policy violation; if you examine the 'Active images at most risk' you will see two images displayed. Note that one of the images is 'distroless/base-debian12'.
+
+Switch to the 'Violations' content page. This is a more concise summary of issues, and can be used interchangeably with the Dashboard, based on your preferences.
+
+Switch back to the OpenShift interface. Click on *Workloads* and then *Deployments*. Click on the *clean-app* deployment. Click on *Yaml*.
+
+Note the definition of the init-container; RHACS has detected and scanned this init-container correctly, and found no issues.
+
+image::acs-deployment-clean.png[Clean deployment definition]
+
+Switch to the OpenShift console, and type the following:
+
+[source,bash,role="copypaste"]
+----
+oc create -f dirty-deployment.yaml
+----
+
+[WARNING]
+====
+If the Terminal has timed out, or if you have closed and reopened it, make sure to perform the clone operation stated above, cd into the ea5-component directory *and* set the project to acs-init-container-test, as the Terminal will default to a clean file system and the openshift-terminal project
+====
+
+Once the Application has deployed, click on *Workloads* and *Topology*. Click on the *dirty-app* roundel, then click on the Pod nasme displayed in the right-hand content window.
+
+In the Pod content panel, click on *Logs*, then click on the pulldown for the Containers; select *dirty-init*
+
+[NOTE]
+====
+Pods can contain more than one Container, and the pulldown allows you to examine the logs of the individual containers, including, where used, the init-container 
+====
+
+The log will indicate that the init-container is well-behaved, but it based on image with known CVEs.
+
+Switch to the RHACS console; you should still be on the Dashboard, with the namespace ace-init-container-test selected. Refresh the page.
+
+[NOTE]
+====
+The RHACS Dashboard is time-stamped and does not auto-refresh.
+====
+
+You will now see that RHACS has scanned the init-container as part of the deployment process, and discovered two *High* violations. Click directly on the 'High' panel.
+
+The following overview specific to the violation detections in the init-container of the deployment will be rendered:
+
+image::acs-deployment-dirty.png[Dirty deployment ACS output]
+
+[NOTE]
+====
+RHACS has detected and reported on violations within the Image of the init-container as executed as part of the 'dirty' deployment correctly
+====
+
+Switch to the OpenShift terminal. Make sure you are in the ea5-components directory; again, if the terminal has timed out re-open it and set the project/clone the examples as before.
+
+Type the following:
+
+[source,bash,role="copypaste"]
+----
+oc create -f blue-deployment.yaml
+----
+
+Once this has succeeded, click on *Workloads*, *Topology* and make sure the Deployment has been successful (there will be a blue border around the *blue-app* roundel). As before, click on the
+*blue-app* Deployment, then the Pod name, and on the Pod content page examine the logs for the blue-init container (follow the instructions above to select the logs/appropriate container).
+
+[NOTE]
+====
+This example provides an init-container that switches to privileged and performs a legitimate action.
+====
+
+Switch to the RHACS interface. Click on *Dashboard* (or Violations if you wish), select the local-cluster, and then the namespace *acs-init-comtainer-test* as before.
+
+[NOTE]
+====
+RHACS has detected the behaviour of the *blue* deployment; there will be additional policy violations detected but also notice the level of the *Risk Priority* given in the *Active images at most risk* content pane.
+====
+
+[NOTE]
+====
+Blue triggered a privileged-policy with an operational justification. Now that init containers are include in policy evaluation, you may need to make changes to your security policies to exclude justified deviations.
+Experiment with the provided policies using the new Filters section and select "Skip init containers". Recall that the policy was applied as code. Local changes in the UI are good for experimenting and learning. You can use the "save as Custom Resource" to see the new policy code you would apply.
+====
+
+The last scenario is to create a Deployment that behaves as with the *blue* deployment but performs a prohibited task. For this scenario we will add a specific policy and behaviour for our test namespace.
+
+Switch to the OpenShift terminal and type:
+
+[source,bash,role="copypaste"]
+----
+oc create -f red-deployment.yaml
+----
+
+Once the deployment has completed, click *Workloads*, *Topology*, then the roundel for *red-app*. Click on the running Pod, select the *Logs* content pane and examine the log output from the *red-init* container. It should read:
+
+[source,bash]
 ----
 red-init: unpatched image with known CVEs, running privileged with no legitimate justification
 ----
 
-. Reload the ACS Dashboard (`local-cluster`, namespace `acs-init-container-test`). You should now see critical CVE and privileged violations for the Red init container:
-+
-image::acs-deployment-red.png[ACS Dashboard showing critical CVE and privileged violations for the Red init container,link=_images/acs-deployment-red.png,window=ea-images]
-+
-NOTE: The distroless images in this namespace are the init-container images. These four deployments show that the ACS policy engine evaluates init containers as well as the main container on the deployment.
+Switch to the RHACS console again. On the Dashboard, assuming you have selected *local-cluster* and the namespace *acs-init-container-test* you should now see this:
 
-What you just proved:: ACS 5 scanned the init container images, attributed findings to those init containers, and fired namespace-scoped Build/Deploy policies on Dirty (CVEs), Blue (justified privileged), and Red (CVEs plus unjustified privileged). Clean stayed quiet on both demo policies.
+image::acs-deployment-red.png[indication of detection of critical CVE and violations in init-container for red]
 
 [.step-title]
 Structured feedback (Init Container Security Coverage)
