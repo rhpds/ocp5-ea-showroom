@@ -12,6 +12,7 @@ Your environment includes an *OpenShift MCP Server* that provides tools for quer
 * *Metrics* — query Prometheus for CPU, memory, and custom metrics via PromQL
 * *Config* — manage kubeconfig contexts for multi-cluster operations
 * *NetEdge* — diagnose OVN networking issues on nodes
+* *OSSM* — query and manage OpenShift Service Mesh / Istio via Kiali (mesh health, traffic graphs, tracing, Istio config management)
 
 The server implements the MCP specification, allowing any MCP-compatible client (Claude Desktop, Cursor, VS Code, MCP Inspector, or custom agents) to connect and use cluster tools. RBAC is enforced — the MCP server respects the user's OpenShift permissions, so a read-only user cannot delete resources even through the AI.
 
@@ -286,12 +287,332 @@ oc patch deployment openshift-mcp-server -n openshift-mcp \
 oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
 ----
 
+=== Exercise 9: Kiali/OSSM Toolset Discovery
+
+After connecting to the MCP server, verify that the OSSM toolset is enabled and that the Kiali tools are available.
+
+. Using your connected AI client, ask:
++
+_"List all available service mesh tools"_
++
+The AI should return a list of `ossm_*` tools, including `ossm_get_mesh_status`, `ossm_manage_istio_config`, `ossm_manage_istio_config_read`, and `ossm_get_mesh_traffic_graph`.
+
+. Verify that the Kiali toolset is reachable by asking:
++
+_"Can you connect to Kiali and confirm the service mesh is accessible?"_
++
+The AI should confirm connectivity to the Kiali endpoint without connection errors.
+
+=== Exercise 10: Mesh Health Check
+
+An SRE needs to quickly assess the overall health of the service mesh. The `ossm_get_mesh_status` tool provides a high-level view of control plane, data plane, and observability components.
+
+. Ask your AI assistant:
++
+_"Check the status of the service mesh and identify any control plane, data plane, or observability issues"_
++
+The AI should use `ossm_get_mesh_status` and return:
+
+* Control plane status (Istio version, healthy components)
+* Data plane namespace health (e.g., `bookinfo` = HEALTHY)
+* Connectivity between components (Kiali to Prometheus, Jaeger, istiod)
+
+. You can also try: _"Is the Istio control plane healthy? What version is running?"_
+
+=== Exercise 11: List Istio Config and Report Validations
+
+Kiali validates Istio configuration objects and can surface misconfigurations that `oc get` alone would miss.
+
+. Ask your AI assistant:
++
+_"List Istio config in bookinfo and tell me if anything is invalid or has Kiali validation warnings"_
++
+The AI should use `ossm_manage_istio_config_read` (list/get) and report:
+
+* Which Istio objects exist (VirtualServices, DestinationRules, Gateways)
+* Whether any have validation errors or KIA warnings
+* Plain-language explanation of warning vs hard error
+
+NOTE: If the namespace is fully valid, reporting "no validation errors" is a successful result.
+
+=== Exercise 12: Traffic Topology and Latency
+
+The OSSM toolset provides AI-accessible traffic graphs and metrics from Kiali, allowing SREs to visualize service-to-service traffic and identify slow hops.
+
+. Ask your AI assistant:
++
+_"Show me the traffic graph and latency for bookinfo. Which hops are slowest?"_
++
+The AI should use `ossm_get_mesh_traffic_graph` and/or `ossm_get_metrics` to:
+
+* Report hop-level latency and error signals from live data
+* Identify which service-to-service edges are slowest
+* Give actionable next steps only when evidence supports them
+
+NOTE: If traffic volume is low, the AI should report that rather than invent spikes.
+
+=== Exercise 13: Distributed Tracing Drill-Down
+
+When troubleshooting latency or errors, distributed traces show the exact path a request took through the mesh and where time was spent.
+
+. Ask your AI assistant:
++
+_"Show me recent traces for the productpage service in bookinfo and explain any slow or error traces"_
++
+The AI should use `ossm_list_traces` and optionally `ossm_get_trace_details` to:
+
+* List recent traces for the service
+* Identify the bottleneck span/service if slow traces exist
+* Provide clear "no traces found" guidance if the trace list is empty
+
+NOTE: If the tracing backend (Tempo) has not collected traces yet, an empty result is expected. Allow a few minutes of traffic generation before retrying.
+
+=== Exercise 14: Read-Only Mode Blocks OSSM Write Tools
+
+When the MCP server is in read-only mode, write tools should be completely hidden — not just blocked. This applies to OSSM tools as well.
+
+. Enable read-only mode (if not already enabled from Exercise 8):
++
+[source,sh,role=execute]
+----
+oc patch deployment openshift-mcp-server -n openshift-mcp \
+  --type=json \
+  -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--read-only"}]'
+oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
+----
++
+NOTE: After enabling read-only mode, remove and re-add the MCP server in your AI client so the tool list refreshes.
+
+. Verify that `ossm_manage_istio_config` (the write tool) is *absent* from the tool list:
++
+_"List all available service mesh tools"_
++
+The response should include read-only tools (`ossm_get_mesh_status`, `ossm_manage_istio_config_read`, `ossm_get_mesh_traffic_graph`) but *not* `ossm_manage_istio_config`.
+
+. Try a write operation — it should fail:
++
+_"Create a new VirtualService in the bookinfo namespace"_
+
+. Confirm that read tools still work:
++
+_"List Istio config in bookinfo"_
+
+. Restore write mode when done:
++
+[source,sh,role=execute]
+----
+oc patch deployment openshift-mcp-server -n openshift-mcp \
+  --type=json \
+  -p='[{"op":"replace","path":"/spec/template/spec/containers/0/args","value":["--config","/etc/mcp/config.toml"]}]'
+oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
+----
++
+IMPORTANT: Remove and re-add the MCP server in your AI client after restoring write mode so that write tools reappear.
+
+=== Exercise 15: Traffic Routing and Issue Detection (Write)
+
+The EAP environment pre-seeds a VirtualService for reviews that routes 100% of traffic to v1 (no red stars on the product page). The AI should detect this and be able to fix it.
+
+. Open the Bookinfo product page and note that reviews never show any stars, red or black (only reviews-v1 is receiving traffic):
++
+http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo Product Page^]
++
+image::mcp-server-bookinfo-no-stars.png[Bookinfo product page showing reviews without stars — all traffic routed to reviews-v1,link=_images/mcp-server-bookinfo-no-stars.png,window=ea-images]
+
+. Ask your AI assistant:
++
+_"The product page never shows any stars for reviews. Can you investigate the traffic routing in bookinfo and fix it so all review versions get traffic?"_
++
+The AI should:
+
+.. Use `ossm_manage_istio_config_read` to find the VirtualService for reviews
+.. Identify that v3 has weight 0
+.. Use `ossm_manage_istio_config` to patch the weights (with confirmation)
+.. Verify traffic distribution afterward
+
+. Refresh the product page several times — you should now see ratings stars appear: black stars from reviews-v2 and red stars from reviews-v3.
++
+image::mcp-server-bookinfo-with-stars.png[Bookinfo product page showing reviews with red stars — traffic now reaching reviews-v3,link=_images/mcp-server-bookinfo-with-stars.png,window=ea-images]
+
+. To restore the original routing for other exercises:
++
+[source,sh,role=execute]
+----
+oc apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: bookinfo
+  labels:
+    eap.kiali.io/test: eap-preconditions
+spec:
+  hosts:
+  - reviews.bookinfo.svc.cluster.local
+  http:
+  - route:
+    - destination:
+        host: reviews.bookinfo.svc.cluster.local
+        subset: v1
+      weight: 100
+    - destination:
+        host: reviews.bookinfo.svc.cluster.local
+        subset: v2
+      weight: 0
+    - destination:
+        host: reviews.bookinfo.svc.cluster.local
+        subset: v3
+      weight: 0
+EOF
+----
+
+=== Exercise 16: Fault Injection Troubleshooting
+
+In this exercise you will inject a fault into the Bookinfo details service and then ask the AI to diagnose and fix it.
+
+. First, apply a fault injection that returns HTTP 503 for 100% of requests to the details service:
++
+[source,sh,role=execute]
+----
+oc apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: details
+  namespace: bookinfo
+  labels:
+    eap.kiali.io/test: eap-preconditions
+spec:
+  host: details.bookinfo.svc.cluster.local
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: details
+  namespace: bookinfo
+  labels:
+    eap.kiali.io/test: eap-preconditions
+spec:
+  hosts:
+  - details.bookinfo.svc.cluster.local
+  http:
+  - route:
+    - destination:
+        host: details.bookinfo.svc.cluster.local
+        subset: v1
+      weight: 100
+    fault:
+      abort:
+        percentage:
+          value: 100
+        httpStatus: 503
+EOF
+----
++
+Wait about 30 seconds for traffic to flow through the faulted path. Refresh the Bookinfo product page to confirm the details section shows an error:
++
+http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo Product Page^]
++
+image::mcp-server-bookinfo-details-broken.png[Bookinfo product page with details section showing an error due to fault injection,link=_images/mcp-server-bookinfo-details-broken.png,window=ea-images]
++
+Now ask your AI assistant:
++
+_"Users are seeing 503 errors on the Bookinfo details page. Can you investigate what's causing this and fix it?"_
++
+The AI should:
+
+.. Use `ossm_manage_istio_config_read` to find the VirtualService for details in the bookinfo namespace
+.. Identify the `fault.abort` block (httpStatus 503, percentage 100%)
+.. Explain how this configuration causes 503 errors
+.. Use `ossm_manage_istio_config` to remove the fault block (with confirmation)
+.. Verify the fix by checking that details requests succeed
+
+. Confirm the details section of the product page is working again by refreshing the Bookinfo product page.
++
+image::mcp-server-bookinfo-details-fixed.png[Bookinfo product page with details section restored after removing fault injection,link=_images/mcp-server-bookinfo-details-fixed.png,window=ea-images]
+
+. Clean up any remaining resources when done:
++
+[source,sh,role=execute]
+----
+oc delete virtualservice details -n bookinfo --ignore-not-found
+oc delete destinationrule details -n bookinfo --ignore-not-found
+----
+
+=== Exercise 17: Create an Istio Gateway (Write)
+
+The OSSM write tool can create Istio resources. In this exercise, the AI creates a test Gateway to verify write functionality.
+
+. Ask your AI assistant:
++
+_"Create an Istio Gateway named eap-test-gateway in the istio-system namespace for HTTP traffic on port 80, using the istio ingressgateway selector"_
++
+The AI should:
+
+.. Use `ossm_manage_istio_config` to create the Gateway
+.. Confirm the action before proceeding (if confirmation is enabled)
+.. Report success
+
+. Verify the Gateway was created:
++
+[source,sh,role=execute]
+----
+oc get gateway.networking.istio.io eap-test-gateway -n istio-system
+----
+
+. Verify the AI can read it back:
++
+_"Show me the details of the eap-test-gateway in istio-system"_
+
+=== Exercise 18: Delete an Istio Gateway (Write)
+
+After creating the test Gateway in Exercise 17, verify that the AI can also delete Istio resources.
+
+. Ask your AI assistant:
++
+_"Delete the eap-test-gateway Gateway in istio-system"_
++
+The AI should confirm before deleting, then report success.
++
+NOTE: AI clients like Claude are extra cautious with destructive operations. The MCP server includes system instructions telling AI tools to warn users and ask for explicit confirmation before deleting resources. You may need to confirm the deletion more than once — this is expected safety behavior, not a bug.
+
+. Verify the Gateway is gone:
++
+[source,sh,role=execute]
+----
+oc get gateway.networking.istio.io eap-test-gateway -n istio-system 2>&1 || echo "Gateway deleted successfully"
+----
+
+=== Exercise 19: Multi-Tool Mesh Investigation
+
+This exercise combines multiple OSSM tools in a single investigation, demonstrating how AI can correlate data from mesh health, traffic graphs, tracing, and Istio config to build a complete picture.
+
+. Ask your AI assistant:
++
+_"Give me a complete health report for the bookinfo application: check the mesh status, show me the traffic graph with any error rates, list any Istio config validation warnings, and show recent traces if available"_
++
+The AI should call multiple tools (`ossm_get_mesh_status`, `ossm_get_mesh_traffic_graph`, `ossm_manage_istio_config_read`, `ossm_list_traces`) and synthesize the results into a coherent report that includes:
+
+* Overall mesh health
+* Traffic flow and error rates between services
+* Istio configuration status and any validation issues
+* Recent trace data (if available)
+
+. You can also try asking the AI to correlate across toolsets:
++
+_"Are there any service mesh issues that correlate with Prometheus alerts?"_
+
 == Other Things to Try
 
-* Ask your AI client _"What tools are available on this MCP server?"_ to see a full list of tools and their descriptions
-* Try asking your AI client to correlate data across tools — for example, _"Find pods with high CPU usage and check their logs for errors"_
-* Explore the network diagnostics toolset by asking about SR-IOV or pod connectivity in the `mcp-demo-network` namespace
-* Ask your AI client to create a summary report of cluster health across multiple namespaces
+* Ask the AI to shift traffic gradually: _"Route 10% of reviews traffic to v3 and monitor error rates for 2 minutes before increasing"_
+* Ask about mTLS status: _"Is mutual TLS enforced between services in bookinfo? Are there any permissive policies?"_
+* Try a capacity planning question: _"Based on current traffic patterns and resource usage in bookinfo, which services would need scaling first under 10x load?"_
+* Ask the AI to compare mesh behavior over time: _"Has the error rate for any bookinfo service changed in the last hour?"_
+* Explore cross-toolset correlation: _"Check if any service mesh latency spikes correlate with high CPU usage on the nodes running bookinfo pods"_
 
 == Known Limitations
 
@@ -306,4 +627,5 @@ oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120
 * The metrics toolset provides AI-accessible Prometheus querying for observability workflows
 * Read-only mode provides a server-level safety mechanism independent of RBAC
 * Destructive operations are annotated with safety hints that compliant AI clients use for confirmation prompts
+* The OSSM toolset enables AI-driven service mesh operations — health checks, traffic analysis, tracing, and Istio config management through Kiali
 * MCP servers can be used standalone or federated through an MCP Gateway

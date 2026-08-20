@@ -101,7 +101,15 @@
     "precheck",
     "prechecks",
     "prereqs",
-    "crashlooping"
+    "crashlooping",
+    "OSSM",
+    "Kiali",
+    "kiali",
+    "istiod",
+    "bookinfo",
+    "Bookinfo",
+    "productpage",
+    "ingressgateway"
   ],
   "ignorePaths": [
     "node_modules/**",
