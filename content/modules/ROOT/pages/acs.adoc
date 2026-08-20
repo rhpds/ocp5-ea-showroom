@@ -43,7 +43,7 @@ Each of these features is covered in more detail in the following sections. Part
 | https://central-acs.{openshift_cluster_ingress_domain}[ACS Central^]
 |===
 
-* Open the OpenShift Lightspeed dialog (the icon at the bottom right of the interface). Ask Lightspeed to create a shortcut to the ACS console:
+* In the OpenShift Console, open the OpenShift Lightspeed dialog (the icon at the bottom right of the interface). Ask Lightspeed to create a shortcut to the ACS console:
 +
 [source,bash,role="copypaste"]
 ----
@@ -54,7 +54,7 @@ Once it is completed, click on the 3x3 icon at the top; you should see this:
 +
 image::acs-initcontainer-menu.png[The ACS console link in the OpenShift application menu]
 
-* Log into the ACS console by clicking the 'ACS' link you just created. The username is *admin* and the password can be obtained, using the OpenShift User Interface, by clicking on *Workloads*, *Secrets*, setting the project to *ACS* and clicking on the *central-admin-password* secret. You can use the 'copy' icon next to the *password* field to copy the password to the clipboard.
+* Log into the ACS console by clicking the 'ACS' link you just created, using the credentials above. You can also click the "Red Hat Advanced Cluster Security" tab at the right to open the ACS console.
 +
 image::acs-console.png[The ACS console]
 
@@ -563,12 +563,14 @@ If prompted to approve MCP tools, approve the ACS MCP tools so the agent can cal
 
 . Ask Lightspeed to list secured clusters (warm-up, from the stackrox-mcp / RHACS demo examples):
 +
+[source,role="copypaste"]
 ----
 List all clusters secured by ACS / StackRox.
 ----
 
 . Ask a vulnerability question that exercises the vulnerability toolset:
 +
+[source,role="copypaste"]
 ----
 Is CVE-2021-44228 (Log4Shell) detected in any of my clusters or deployments?
 ----
@@ -577,6 +579,7 @@ TIP: This lab deploys intentionally vulnerable demo apps (including log4shell). 
 
 . Ask a multi-CVE question that should resolve deployments and namespaces for each CVE:
 +
+[source,role="copypaste"]
 ----
 Are any of the following CVEs present in my clusters: CVE-2025-47151, CVE-2024-47561? Show which deployments and namespaces are affected by each.
 ----
@@ -585,16 +588,19 @@ TIP: This prompt tests whether the agent can handle more than one CVE in a singl
 
 . Ask whether cluster nodes are affected (this should invoke `get_nodes_for_cve`):
 +
+[source,role="copypaste"]
 ----
 Are any of my cluster nodes affected by CVE-2021-44228?
 ----
 
 . Optionally try more targeted prompts. ACS MCP looks up *named* CVEs (and can filter by namespace). It does not enumerate every critical CVE in a namespace:
 +
+[source,role="copypaste"]
 ----
 Which deployments in the juice-shop or log4shell namespaces are affected by CVE-2021-44228?
 ----
 +
+[source,role="copypaste"]
 ----
 Use the ACS MCP server and run list_secured_clusters.
 ----
@@ -706,7 +712,8 @@ Check the project has no workloads using:
 oc get pods
 ----
 
-== Enabling Privileged access for the tests
+[.step-title]
+Enabling Privileged access for the tests
 
 In the Terminal, type:
 
@@ -717,7 +724,8 @@ oc adm policy add-scc-to-user privileged system:serviceaccount:acs-init-containe
 
 This allows Pods, and Init Containers, to switch to Privileged to perform actions.
 
-== Running the tests
+[.step-title]
+Running the tests
 
 For the sake of testing we have four specific use-cases represented by different Deployment definitions, each designed to highlight a behaviour now offered within
 RHACS for the monitoring and actioning of Init Containers. These are:
@@ -754,7 +762,7 @@ oc create -f fixable-important-cve.yaml
 oc create -f privileged-init-container.yaml
 ----
 
-While in the Terminal, have a look at these two policy definitions. Specifically, for privileged-init-container.yaml note:
+While in the Terminal, have a look at these two policy definitions. Specifically, for `privileged-init-container.yaml` note:
 
 [source,bash]
 ----
@@ -764,7 +772,7 @@ While in the Terminal, have a look at these two policy definitions. Specifically
   remediation: "Verify that privileged capabilities are actually required (e.g. sysctl tuning) and cannot be provided via a narrower capability grant."
 ----
 
-And for fixable-important-cve.yaml:
+And for `fixable-important-cve.yaml`:
 
 [source,bash]
 ----
