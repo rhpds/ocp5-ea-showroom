@@ -12,8 +12,6 @@ Red Hat Advanced Cluster Security (ACS) 5 introduces several new capabilities fo
 
 . *File Activity Monitoring (FAM)* — provides runtime file integrity monitoring. Security teams can define custom file paths, with wildcard support, to monitor for access, modification, and rename operations. File activity criteria can be combined with process-level criteria such as process name, ancestor, arguments, UID in deployment and node policies, enabling detection of unauthorized file access patterns required for compliance frameworks such as PCI-DSS.
 
-. *OpenShift Lightspeed Integration for Risk Enrichment* — uses OpenShift Lightspeed to enrich ACS Risk findings with AI-assisted context: why a deployment ranks high, which signals drive the score, and what remediation to prioritize. Security teams can move from a ranked Risk list to an explained, actionable next step without leaving the console workflow.
-
 . *ACS MCP Server* — exposes ACS Vulnerability Management APIs (CVEs, images, deployments, and nodes) and Configuration Management APIs (secured clusters) as MCP tools, allowing AI agents to query security data programmatically. 
 
 . *Init Container Security Coverage* — RHACS now evaluates init containers for both image scanning and security policies. When a deployment references init containers, their images are scanned for vulnerabilities using the same process as main container images. Build and Deploy stage policies can be configured to include or exclude init containers using the "Filters" menu.
@@ -475,28 +473,7 @@ Please help us improve by submitting feedback for File Activity Monitoring:
 
 link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsIkUQ8Wvp5yHmtrOw/formResponse[ACS 5.0 Feedback Form — File Activity Monitoring^]
 
-=== Exercise 3: OpenShift Lightspeed Integration for Risk Enrichment
-
-OpenShift Lightspeed can enrich ACS Risk findings with AI-assisted context: why a deployment ranks high, which signals drive the score, and what to remediate first. Security teams can move from a ranked list to an explained next step without leaving the console.
-
-In this exercise you will open ACS Risk for the demo workloads and use Lightspeed to explain and prioritize findings.
-
-[.step-title]
-Understanding Risk Enrichment with Lightspeed (TBD)
-
-.Prerequisites
-
-[.step-title]
-Explore ACS Risk and enrich with Lightspeed (TBD)
-
-[.step-title]
-Structured feedback (OpenShift Lightspeed Integration for Risk Enrichment)
-
-Thank you for completing this exercise! Please help us improve by submitting feedback for OpenShift Lightspeed Integration for Risk Enrichment:
-
-link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsIkUQ8Wvp5yHmtrOw/formResponse[ACS 5.0 Feedback Form — OpenShift Lightspeed Integration for Risk Enrichment^]
-
-=== Exercise 4: ACS MCP Server
+=== Exercise 3: ACS MCP Server
 
 The ACS MCP server exposes Vulnerability Management and Configuration Management APIs as MCP tools. AI agents, including OpenShift Lightspeed, can query CVEs, images, deployments, nodes, and secured clusters in natural language instead of clicking through Central page by page.
 
@@ -670,7 +647,7 @@ Thank you for completing this exercise! Please help us improve by submitting fee
 
 link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsIkUQ8Wvp5yHmtrOw/formResponse[ACS 5.0 Feedback Form — ACS MCP Server^]
 
-=== Exercise 5: Init Container Security Coverage
+=== Exercise 4: Init Container Security Coverage
 
 This exercise will walk you through and demonstrate the capabilities in OCP5 and RHACS (5) for the scanning of Init Containers.
 
@@ -941,6 +918,5 @@ link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsI
 * ACS 5 extends security coverage beyond containers to virtual machines running on OpenShift Virtualization
 * roxagent listens over VSOCK for Sensor pull requests, requiring no guest network configuration for ACS scanning
 * File activity monitoring provides visibility into security-relevant file access patterns
-* Lightspeed Risk Enrichment (when available) explains and prioritizes ACS Risk findings with AI-assisted context
 * The ACS MCP server enables AI agents to query secured clusters and CVE findings (deployments and nodes) programmatically
 * Init container scanning extends image and policy coverage to init containers
