@@ -43,6 +43,21 @@ Each of these features is covered in more detail in the following sections. Part
 | https://central-acs.{openshift_cluster_ingress_domain}[ACS Central^]
 |===
 
+* Open the OpenShift Lightspeed dialog (the icon at the bottom right of the interface). Ask Lightspeed to create a shortcut to the ACS console:
++
+[source,bash,role="copypaste"]
+----
+can you create a global consolelink that has the label 'ACS' and points to the route for the ACS console. Add the Red Hat icon to the consolelink
+----
++
+Once it is completed, click on the 3x3 icon at the top; you should see this:
++
+image::acs-initcontainer-menu.png[The ACS console link in the OpenShift application menu]
+
+* Log into the ACS console by clicking the 'ACS' link you just created. The username is *admin* and the password can be obtained, using the OpenShift User Interface, by clicking on *Workloads*, *Secrets*, setting the project to *ACS* and clicking on the *central-admin-password* secret. You can use the 'copy' icon next to the *password* field to copy the password to the clipboard.
++
+image::acs-console.png[The ACS console]
+
 * Verify the Secured Cluster is connected: navigate to *Platform Configuration > Clusters* in ACS Central and confirm the Secured Cluster is listed.
 
 * Verify the prebuilt VM is running:
@@ -658,36 +673,10 @@ As such they are an attack vector for exploitation; RHACS now has capabilities f
 
 Unlike Pods, Init Containers are not resident; once executed they are removed, so the runtime policies offered by RHACS focus on process execution and baseline comparisons.
 
-For this exercise we will be using the OCP and RHACS interfaces. 
+For this exercise we will be using the OCP and RHACS interfaces.
 
-== Logging on to the OpenShift 5 Cluster
-
-Using the following link, log into the OpenShift cluster - {openshift_cluster_console_url}[OpenShift cluster^] using the credentials
-user:{openshift_cluster_admin_username} password:{openshift_cluster_admin_password}
-
-Now open the OpenShift Lightspeed dialog (if it is not already open). This is the icon at the bottom right of the interface. We are going to
-ask OpenShift Lightspeed to create a link in the console (the 3x3 square icon at the top) to allow us to go to the ACS console quickly from the OpenShift interface. 
-
-[source,bash,role="copypaste"]
-----
-can you create a global consolelink that has the label 'ACS' and points to the route for the ACS console. Add the Red Hat icon to the consolelink
-----
-
-Once it is completed, click on the 3x3 icon at the top; you should see this:
-
-image::acs-initcontainer-menu.png[The ACS console link in the OpenShift application menu]
-
-=== Logging into the RHACS console
-
-Having added the link to the Console shortcuts, click on the 3x3 icon at the top right of the OCP User Interface and click on 'ACS'. This will open a tab with
-the ACS console in it.
-
-Log into the ACS console; username is *admin* and the password can be obtained, using the OpenShift User Interface, by clicking on *Workloads*, *Secrets*, setting the project to *ACS*
-and clicking on the *central-admin-password* secret. You can use the 'copy' icon next to the *password* field to copy the password to the clipboard.
-
-image::acs-console.png[The ACS console]
-
-== Using OpenShift Lightspeed and the OpenShift User Interface to prepare the tests
+[.step-title]
+Using OpenShift Lightspeed and the OpenShift User Interface to prepare the tests
 
 In the OpenShift lightspeed dialog, enter the following:
 
