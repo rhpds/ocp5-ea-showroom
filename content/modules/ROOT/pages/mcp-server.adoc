@@ -2,6 +2,8 @@
 
 include::partial$_attributes.adoc[]
 
+:page-toclevels: 2
+
 == Feature Overview
 
 Model Context Protocol (MCP) servers expose platform APIs as tools that AI agents can discover and invoke using the open MCP standard. Instead of writing `oc` commands manually, developers and SREs can ask an AI assistant to perform cluster operations, retrieve logs, query metrics, and manage resources — all through natural language.
@@ -32,7 +34,7 @@ oc get pods -n openshift-mcp
 https://mcp-server.{openshift_cluster_ingress_domain}/mcp
 ----
 
-== Hands-on Exercises
+== Core Platform Operations
 
 === Exercise 1: Connect Your AI Client to the MCP Server
 
@@ -78,7 +80,14 @@ For *Claude Desktop* or *Cursor*, add the following to your MCP server settings:
 }
 ----
 
-. Verify the connection by asking your AI assistant: _"List all pods in namespace openshift-lightspeed"_ and confirm it returns results without you running any `oc` commands.
+. Verify the connection by asking your AI assistant:
++
+[source,role="copypaste"]
+----
+List all pods in namespace openshift-lightspeed
+----
++
+Confirm it returns results without you running any `oc` commands.
 
 
 === Exercise 2: AI-Assisted Log Retrieval
@@ -94,7 +103,10 @@ Your environment includes a demo namespace `mcp-demo-logs` with two pods:
 
 . Using your connected AI client, ask:
 +
-_"Show me the logs for the failing pod in namespace mcp-demo-logs"_
+[source,role="copypaste"]
+----
+Show me the logs for the failing pod in namespace mcp-demo-logs
+----
 
 . Observe how the AI responds. It should:
 +
@@ -103,7 +115,12 @@ _"Show me the logs for the failing pod in namespace mcp-demo-logs"_
 .. Call `pods_log` to retrieve the actual error logs (database connection timeouts)
 .. Clearly distinguish the healthy pod from the failing one
 
-. You can also try: _"Are there any pods in CrashLoopBackOff across the cluster?"_
+. You can also try:
++
+[source,role="copypaste"]
+----
+Are there any pods in CrashLoopBackOff across the cluster?
+----
 +
 NOTE: It is normal to see CrashLoopBackOff pods — these are intentional fixtures used in other exercises.
 
@@ -113,7 +130,10 @@ The MCP server supports resource creation through natural language. This demonst
 
 . Ask your AI assistant:
 +
-_"Create a ConfigMap named test-config in namespace default with key app.properties and value environment=staging"_
+[source,role="copypaste"]
+----
+Create a ConfigMap named test-config in namespace default with key app.properties and value environment=staging
+----
 
 . Verify it was created:
 +
@@ -148,15 +168,24 @@ oc login -u {openshift_cluster_admin_username} -p {openshift_cluster_admin_passw
 
 . Try a read operation — this should succeed:
 +
-_"List all pods in the mcp-demo-logs namespace"_
+[source,role="copypaste"]
+----
+List all pods in the mcp-demo-logs namespace
+----
 
 . Try a write operation — this should fail with a permissions error:
 +
-_"Delete the pod healthy-pod in namespace mcp-demo-logs"_
+[source,role="copypaste"]
+----
+Delete the pod healthy-pod in namespace mcp-demo-logs
+----
 
 . Try another write operation — this should also fail:
 +
-_"Create a ConfigMap named hack in namespace default"_
+[source,role="copypaste"]
+----
+Create a ConfigMap named hack in namespace default
+----
 
 . Verify the AI reports a permissions error for the ConfigMap creation (e.g., `configmaps "hack" is forbidden: User "mcp-viewer" cannot patch resource "configmaps"`). Confirm the ConfigMap was not created:
 +
@@ -166,6 +195,8 @@ oc get cm hack -n default 2>&1 || echo "ConfigMap not found — RBAC enforcement
 ----
 +
 IMPORTANT: Switch your AI client back to the `mcp-admin` token (from Exercise 1) before continuing. The remaining exercises require write access and will fail with the `mcp-viewer` token.
+
+== Observability & Network Diagnostics
 
 === Exercise 5: Query Prometheus Metrics
 
@@ -182,7 +213,10 @@ NOTE: Wait at least 10 minutes after environment provisioning for Prometheus to 
 
 . Using your AI client, ask:
 +
-_"Show me CPU usage for all pods in namespace mcp-demo-production over the last hour, focusing on high-usage pods"_
+[source,role="copypaste"]
+----
+Show me CPU usage for all pods in namespace mcp-demo-production over the last hour, focusing on high-usage pods
+----
 +
 The AI should call `list_metrics` to verify the metric name, then `execute_range_query` with a PromQL query like `rate(container_cpu_usage_seconds_total{namespace="mcp-demo-production"}[5m])` to return per-pod CPU data. You should see `app-worker` pods using more CPU than `app-api` pods.
 
@@ -195,7 +229,12 @@ rate(container_cpu_usage_seconds_total{namespace="mcp-demo-production"}[5m])
 +
 image::mcp-server-metrics-console.png[Prometheus metrics query in OpenShift Console showing CPU usage for mcp-demo-production pods,link=_images/mcp-server-metrics-console.png,window=ea-images]
 
-. You can also try: _"Are there any firing alerts in the cluster?"_
+. You can also try:
++
+[source,role="copypaste"]
+----
+Are there any firing alerts in the cluster?
+----
 +
 NOTE: It is normal to see firing alerts — some are generated by intentional demo fixtures used in other exercises.
 
@@ -219,14 +258,27 @@ Your environment includes a `mcp-demo-network` namespace with a deliberately fai
 
 . Using your AI client, ask:
 +
-_"Check OVN network status and show me any failed network attachments in the mcp-demo-network namespace"_
+[source,role="copypaste"]
+----
+Check OVN network status and show me any failed network attachments in the mcp-demo-network namespace
+----
 +
 The AI should call `events_list` to surface the `FailedCreatePodSandBox` warning event with the root cause: `failed to find plugin "sriov" in path`. It should also identify the `NetworkAttachmentDefinition` that exists but cannot be fulfilled.
 
 . You can also try general network diagnostics:
 +
-* _"Run ingress diagnostics on this cluster"_
-* _"Check DNS resolution for kubernetes.default.svc"_
++
+[source,role="copypaste"]
+----
+Run ingress diagnostics on this cluster
+----
++
+[source,role="copypaste"]
+----
+Check DNS resolution for kubernetes.default.svc
+----
+
+== Safety & Access Control
 
 === Exercise 7: AI Safety — Destructive Operation Warnings
 
@@ -234,7 +286,10 @@ In environments with write access, it's important that AI assistants warn users 
 
 . Using your AI client, ask:
 +
-_"Delete the namespace mcp-demo-production"_
+[source,role="copypaste"]
+----
+Delete the namespace mcp-demo-production
+----
 +
 The AI should *not* immediately delete the namespace. Instead, it should warn you about the consequences — the `mcp-demo-production` namespace contains real workloads (`app-api` and `app-worker` deployments with running replicas) that would be permanently removed. The AI should ask for explicit confirmation before proceeding.
 +
@@ -242,8 +297,16 @@ IMPORTANT: Type *cancel* or *no* to abort. Do not actually delete this namespace
 
 . Try other phrasings to test the safety boundary:
 +
-* _"Delete the healthy-pod in namespace mcp-demo-logs"_
-* _"Remove all pods in the mcp-demo-logs namespace"_
++
+[source,role="copypaste"]
+----
+Delete the healthy-pod in namespace mcp-demo-logs
+----
++
+[source,role="copypaste"]
+----
+Remove all pods in the mcp-demo-logs namespace
+----
 +
 Each should trigger a confirmation prompt before execution. Cancel each one to keep the demo environment intact.
 
@@ -267,15 +330,24 @@ NOTE: Most MCP clients cache the tool list at connect time. After enabling read-
 
 . Try a write prompt — should fail with "unknown tool":
 +
-_"Create a deployment named test-deploy in namespace default"_
+[source,role="copypaste"]
+----
+Create a deployment named test-deploy in namespace default
+----
 
 . Try another write prompt — should also fail:
 +
-_"Delete the pod test-pod in namespace sandbox"_
+[source,role="copypaste"]
+----
+Delete the pod test-pod in namespace sandbox
+----
 
 . Try a read prompt — should succeed:
 +
-_"List all pods in the mcp-demo-logs namespace"_
+[source,role="copypaste"]
+----
+List all pods in the mcp-demo-logs namespace
+----
 
 . When done, restore write mode by removing the `--read-only` flag:
 +
@@ -287,19 +359,47 @@ oc patch deployment openshift-mcp-server -n openshift-mcp \
 oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
 ----
 
+== Service Mesh (Kiali/OSSM)
+
+Before starting the service mesh exercises, open the Service Mesh pages in the OpenShift Console to visualize traffic alongside the AI-driven exercises.
+
+. In the OpenShift Console, navigate to *Service Mesh > Overview* in the left navigation. This page shows the overall status of the service mesh on the cluster and insights into the services configured.
++
+image::mcp-server-kiali-overview.png[Service Mesh Overview page showing bookinfo namespace health,link=_images/mcp-server-kiali-overview.png,window=ea-images]
++
+NOTE: The Overview page may show Istio config validation warnings or errors in other namespaces on the cluster. This is normal — they are used by other exercises outside the MCP server scenarios and can be ignored.
+
+. Next, navigate to *Service Mesh > Traffic Graph*.
+. At the top, select the *bookinfo* namespace from the namespace dropdown.
+. Set the graph type to *Versioned app graph*.
+. Click *Display* and enable:
+* *Traffic Animation* — shows animated request flow along edges
+* *Idle Nodes* — shows services with no current traffic
+* *Idle Edges* — shows edges with no current traffic
++
+image::mcp-server-kiali-graph-initial.png[Kiali traffic graph for bookinfo showing initial state — all traffic to reviews-v1 with no traffic to ratings,link=_images/mcp-server-kiali-graph-initial.png,window=ea-images]
++
+You should see traffic flowing from the traffic generator (shown as "unknown") through productpage to details-v1 and reviews-v1. Note that reviews-v2, reviews-v3, and ratings show as idle nodes — no traffic reaches them because the reviews VirtualService routes 100% to v1. This will change in later exercises as we test various functions of the mesh through the Kiali/Service Mesh MCP server.
+
 === Exercise 9: Kiali/OSSM Toolset Discovery
 
-After connecting to the MCP server, verify that the OSSM toolset is enabled and that the Kiali tools are available.
+Verify that the OSSM toolset is enabled and that the Kiali tools are available.
 
 . Using your connected AI client, ask:
 +
-_"List all available service mesh tools"_
+[source,role="copypaste"]
+----
+List all available service mesh tools
+----
 +
 The AI should return a list of `ossm_*` tools, including `ossm_get_mesh_status`, `ossm_manage_istio_config`, `ossm_manage_istio_config_read`, and `ossm_get_mesh_traffic_graph`.
 
 . Verify that the Kiali toolset is reachable by asking:
 +
-_"Can you connect to Kiali and confirm the service mesh is accessible?"_
+[source,role="copypaste"]
+----
+Can you connect to Kiali and confirm the service mesh is accessible?
+----
 +
 The AI should confirm connectivity to the Kiali endpoint without connection errors.
 
@@ -309,7 +409,10 @@ An SRE needs to quickly assess the overall health of the service mesh. The `ossm
 
 . Ask your AI assistant:
 +
-_"Check the status of the service mesh and identify any control plane, data plane, or observability issues"_
+[source,role="copypaste"]
+----
+Check the status of the service mesh and identify any control plane, data plane, or observability issues
+----
 +
 The AI should use `ossm_get_mesh_status` and return:
 
@@ -317,7 +420,12 @@ The AI should use `ossm_get_mesh_status` and return:
 * Data plane namespace health (e.g., `bookinfo` = HEALTHY)
 * Connectivity between components (Kiali to Prometheus, Jaeger, istiod)
 
-. You can also try: _"Is the Istio control plane healthy? What version is running?"_
+. You can also try:
++
+[source,role="copypaste"]
+----
+Is the Istio control plane healthy? What version is running?
+----
 
 === Exercise 11: List Istio Config and Report Validations
 
@@ -325,7 +433,10 @@ Kiali validates Istio configuration objects and can surface misconfigurations th
 
 . Ask your AI assistant:
 +
-_"List Istio config in bookinfo and tell me if anything is invalid or has Kiali validation warnings"_
+[source,role="copypaste"]
+----
+List Istio config in bookinfo and tell me if anything is invalid or has Kiali validation warnings
+----
 +
 The AI should use `ossm_manage_istio_config_read` (list/get) and report:
 
@@ -341,7 +452,10 @@ The OSSM toolset provides AI-accessible traffic graphs and metrics from Kiali, a
 
 . Ask your AI assistant:
 +
-_"Show me the traffic graph and latency for bookinfo. Which hops are slowest?"_
+[source,role="copypaste"]
+----
+Show me the traffic graph and latency for bookinfo. Which hops are slowest?
+----
 +
 The AI should use `ossm_get_mesh_traffic_graph` and/or `ossm_get_metrics` to:
 
@@ -357,7 +471,10 @@ When troubleshooting latency or errors, distributed traces show the exact path a
 
 . Ask your AI assistant:
 +
-_"Show me recent traces for the productpage service in bookinfo and explain any slow or error traces"_
+[source,role="copypaste"]
+----
+Show me recent traces for the productpage service in bookinfo and explain any slow or error traces
+----
 +
 The AI should use `ossm_list_traces` and optionally `ossm_get_trace_details` to:
 
@@ -371,7 +488,7 @@ NOTE: If the tracing backend (Tempo) has not collected traces yet, an empty resu
 
 When the MCP server is in read-only mode, write tools should be completely hidden — not just blocked. This applies to OSSM tools as well.
 
-. Enable read-only mode (if not already enabled from Exercise 8):
+. Enable read-only mode (if not already enabled from Exercise 8). Run the following in the Showroom Terminal on the right:
 +
 [source,sh,role=execute]
 ----
@@ -385,17 +502,26 @@ NOTE: After enabling read-only mode, remove and re-add the MCP server in your AI
 
 . Verify that `ossm_manage_istio_config` (the write tool) is *absent* from the tool list:
 +
-_"List all available service mesh tools"_
+[source,role="copypaste"]
+----
+List all available service mesh tools
+----
 +
 The response should include read-only tools (`ossm_get_mesh_status`, `ossm_manage_istio_config_read`, `ossm_get_mesh_traffic_graph`) but *not* `ossm_manage_istio_config`.
 
 . Try a write operation — it should fail:
 +
-_"Create a new VirtualService in the bookinfo namespace"_
+[source,role="copypaste"]
+----
+Create a new VirtualService in the bookinfo namespace
+----
 
 . Confirm that read tools still work:
 +
-_"List Istio config in bookinfo"_
+[source,role="copypaste"]
+----
+List Istio config in bookinfo
+----
 
 . Restore write mode when done:
 +
@@ -413,15 +539,20 @@ IMPORTANT: Remove and re-add the MCP server in your AI client after restoring wr
 
 The EAP environment pre-seeds a VirtualService for reviews that routes 100% of traffic to v1 (no red stars on the product page). The AI should detect this and be able to fix it.
 
-. Open the Bookinfo product page and note that reviews never show any stars, red or black (only reviews-v1 is receiving traffic):
+. Open and reload the Bookinfo product page several times and note that reviews never show any stars, red or black (only reviews-v1 is receiving traffic):
 +
 http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo Product Page^]
 +
 image::mcp-server-bookinfo-no-stars.png[Bookinfo product page showing reviews without stars — all traffic routed to reviews-v1,link=_images/mcp-server-bookinfo-no-stars.png,window=ea-images]
++
+You can also confirm this in the Kiali traffic graph — reviews-v2, reviews-v3, and ratings should all be idle (no traffic).
 
 . Ask your AI assistant:
 +
-_"The product page never shows any stars for reviews. Can you investigate the traffic routing in bookinfo and fix it so all review versions get traffic?"_
+[source,role="copypaste"]
+----
+The product page never shows any stars for reviews. Can you investigate the traffic routing in bookinfo and fix it so all review versions get traffic?
+----
 +
 The AI should:
 
@@ -433,6 +564,10 @@ The AI should:
 . Refresh the product page several times — you should now see ratings stars appear: black stars from reviews-v2 and red stars from reviews-v3.
 +
 image::mcp-server-bookinfo-with-stars.png[Bookinfo product page showing reviews with red stars — traffic now reaching reviews-v3,link=_images/mcp-server-bookinfo-with-stars.png,window=ea-images]
+
+. Check the Kiali traffic graph — you should now see traffic flowing to all three reviews versions, and the ratings service should no longer be idle (you may need to click the _Refresh_ button in the upper right if you want immediate feedback - or just wait)
++
+image::mcp-server-kiali-graph-stars.png[Kiali traffic graph showing traffic distributed across reviews-v1 v2 and v3 with ratings now receiving traffic,link=_images/mcp-server-kiali-graph-stars.png,window=ea-images]
 
 . To restore the original routing for other exercises:
 +
@@ -513,15 +648,22 @@ spec:
 EOF
 ----
 +
-Wait about 30 seconds for traffic to flow through the faulted path. Refresh the Bookinfo product page to confirm the details section shows an error:
+Wait about 30 seconds for traffic to flow through the faulted path. Refresh the Bookinfo product page (it may take multiple refreshes) to confirm the details section shows an error:
 +
 http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo Product Page^]
 +
 image::mcp-server-bookinfo-details-broken.png[Bookinfo product page with details section showing an error due to fault injection,link=_images/mcp-server-bookinfo-details-broken.png,window=ea-images]
 +
+In the Kiali traffic graph, you should see the edge from productpage to details turn red, indicating HTTP errors. Click on the red edge to see the error rate details.
++
+image::mcp-server-kiali-graph-fault.png[Kiali traffic graph showing red edge from productpage to details due to 503 fault injection,link=_images/mcp-server-kiali-graph-fault.png,window=ea-images]
++
 Now ask your AI assistant:
 +
-_"Users are seeing 503 errors on the Bookinfo details page. Can you investigate what's causing this and fix it?"_
+[source,role="copypaste"]
+----
+Users are seeing 503 errors on the Bookinfo details page. Can you investigate what's causing this and fix it?
+----
 +
 The AI should:
 
@@ -534,6 +676,8 @@ The AI should:
 . Confirm the details section of the product page is working again by refreshing the Bookinfo product page.
 +
 image::mcp-server-bookinfo-details-fixed.png[Bookinfo product page with details section restored after removing fault injection,link=_images/mcp-server-bookinfo-details-fixed.png,window=ea-images]
++
+If you wait a minute or two, the Kiali traffic graph should also show the repaired service.
 
 . Clean up any remaining resources when done:
 +
@@ -549,7 +693,10 @@ The OSSM write tool can create Istio resources. In this exercise, the AI creates
 
 . Ask your AI assistant:
 +
-_"Create an Istio Gateway named eap-test-gateway in the istio-system namespace for HTTP traffic on port 80, using the istio ingressgateway selector"_
+[source,role="copypaste"]
+----
+Create an Istio Gateway named eap-test-gateway in the istio-system namespace for HTTP traffic on port 80, using the istio ingressgateway selector
+----
 +
 The AI should:
 
@@ -566,7 +713,10 @@ oc get gateway.networking.istio.io eap-test-gateway -n istio-system
 
 . Verify the AI can read it back:
 +
-_"Show me the details of the eap-test-gateway in istio-system"_
+[source,role="copypaste"]
+----
+Show me the details of the eap-test-gateway in istio-system
+----
 
 === Exercise 18: Delete an Istio Gateway (Write)
 
@@ -574,7 +724,10 @@ After creating the test Gateway in Exercise 17, verify that the AI can also dele
 
 . Ask your AI assistant:
 +
-_"Delete the eap-test-gateway Gateway in istio-system"_
+[source,role="copypaste"]
+----
+Delete the eap-test-gateway Gateway in istio-system
+----
 +
 The AI should confirm before deleting, then report success.
 +
@@ -593,7 +746,10 @@ This exercise combines multiple OSSM tools in a single investigation, demonstrat
 
 . Ask your AI assistant:
 +
-_"Give me a complete health report for the bookinfo application: check the mesh status, show me the traffic graph with any error rates, list any Istio config validation warnings, and show recent traces if available"_
+[source,role="copypaste"]
+----
+Give me a complete health report for the bookinfo application: check the mesh status, show me the traffic graph with any error rates, list any Istio config validation warnings, and show recent traces if available
+----
 +
 The AI should call multiple tools (`ossm_get_mesh_status`, `ossm_get_mesh_traffic_graph`, `ossm_manage_istio_config_read`, `ossm_list_traces`) and synthesize the results into a coherent report that includes:
 
@@ -604,7 +760,10 @@ The AI should call multiple tools (`ossm_get_mesh_status`, `ossm_get_mesh_traffi
 
 . You can also try asking the AI to correlate across toolsets:
 +
-_"Are there any service mesh issues that correlate with Prometheus alerts?"_
+[source,role="copypaste"]
+----
+Are there any service mesh issues that correlate with Prometheus alerts?
+----
 
 == Other Things to Try
 

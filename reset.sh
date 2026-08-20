@@ -63,6 +63,48 @@ oc exec -n openshift-operators perses-0 -- curl -sk -X DELETE \
   https://localhost:8080/api/v1/projects/payments/dashboards/investigation_hub 2>/dev/null || true
 echo "  Deleted Investigation Hub Perses dashboard"
 
+# ── Kiali/OSSM exercises ──
+echo ""
+echo "--- Resetting Kiali/OSSM exercise state ---"
+
+# Exercise 15: Reset reviews VirtualService to 100% v1
+oc apply -f - <<'EOF' 2>/dev/null || true
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: bookinfo
+  labels:
+    eap.kiali.io/test: eap-preconditions
+spec:
+  hosts:
+  - reviews.bookinfo.svc.cluster.local
+  http:
+  - route:
+    - destination:
+        host: reviews.bookinfo.svc.cluster.local
+        subset: v1
+      weight: 100
+    - destination:
+        host: reviews.bookinfo.svc.cluster.local
+        subset: v2
+      weight: 0
+    - destination:
+        host: reviews.bookinfo.svc.cluster.local
+        subset: v3
+      weight: 0
+EOF
+echo "  Reset reviews VirtualService to 100% v1"
+
+# Exercise 16: Remove details fault injection
+oc delete virtualservice details -n bookinfo --ignore-not-found 2>/dev/null || true
+oc delete destinationrule details -n bookinfo --ignore-not-found 2>/dev/null || true
+echo "  Removed details fault injection"
+
+# Exercise 17/18: Remove test Gateway
+oc delete gateway.networking.istio.io eap-test-gateway -n istio-system --ignore-not-found 2>/dev/null || true
+echo "  Removed eap-test-gateway"
+
 # ── ACS exercises ──
 echo ""
 echo "--- Resetting ACS exercise state ---"
