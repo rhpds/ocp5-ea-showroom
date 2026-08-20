@@ -693,7 +693,7 @@ create a new project for me called acs-init-container-test
 
 The MCP server requires approval, so approve when it asks you.
 
-On the left hand navigation, choose 'Projects' and then acs-init-container-tests. All of the examples will be executed in this project to allow you to observe the results simply in
+On the left hand navigation, choose 'Projects' and then acs-init-container-test. All of the examples will be executed in this project to allow you to observe the results simply in
 the ACS console.
 
 Now click on the '>_' icon at the top right to open the integrated Terminal in the User Interface. We will use this to interact with the project for simplicities sake.
@@ -835,7 +835,7 @@ Pods can contain more than one Container, and the pulldown allows you to examine
 
 The log will indicate that the init-container is well-behaved, but it based on image with known CVEs.
 
-Switch to the RHACS console; you should still be on the Dashboard, with the namespace ace-init-container-test selected. Refresh the page.
+Switch to the RHACS console; you should still be on the Dashboard, with the namespace acs-init-container-test selected. Refresh the page.
 
 [NOTE]
 ====
