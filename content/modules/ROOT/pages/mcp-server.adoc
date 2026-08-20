@@ -539,9 +539,7 @@ IMPORTANT: Remove and re-add the MCP server in your AI client after restoring wr
 
 The EAP environment pre-seeds a VirtualService for reviews that routes 100% of traffic to v1 (no red stars on the product page). The AI should detect this and be able to fix it.
 
-. Open and reload the Bookinfo product page several times and note that reviews never show any stars, red or black (only reviews-v1 is receiving traffic):
-+
-http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo Product Page^]
+. Open and reload the http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo product page^] several times and note that reviews never show any stars, red or black (only reviews-v1 is receiving traffic):
 +
 image::mcp-server-bookinfo-no-stars.png[Bookinfo product page showing reviews without stars — all traffic routed to reviews-v1,link=_images/mcp-server-bookinfo-no-stars.png,window=ea-images]
 +
@@ -561,7 +559,7 @@ The AI should:
 .. Use `ossm_manage_istio_config` to patch the weights (with confirmation)
 .. Verify traffic distribution afterward
 
-. Refresh the product page several times — you should now see ratings stars appear: black stars from reviews-v2 and red stars from reviews-v3.
+. Refresh the http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo product page^] several times — you should now see ratings stars appear: black stars from reviews-v2 and red stars from reviews-v3.
 +
 image::mcp-server-bookinfo-with-stars.png[Bookinfo product page showing reviews with red stars — traffic now reaching reviews-v3,link=_images/mcp-server-bookinfo-with-stars.png,window=ea-images]
 
@@ -648,9 +646,7 @@ spec:
 EOF
 ----
 +
-Wait about 30 seconds for traffic to flow through the faulted path. Refresh the Bookinfo product page (it may take multiple refreshes) to confirm the details section shows an error:
-+
-http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo Product Page^]
+Wait about 30 seconds for traffic to flow through the faulted path. Refresh the http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo product page^] (it may take multiple refreshes) to confirm the details section shows an error:
 +
 image::mcp-server-bookinfo-details-broken.png[Bookinfo product page with details section showing an error due to fault injection,link=_images/mcp-server-bookinfo-details-broken.png,window=ea-images]
 +
@@ -673,7 +669,7 @@ The AI should:
 .. Use `ossm_manage_istio_config` to remove the fault block (with confirmation)
 .. Verify the fix by checking that details requests succeed
 
-. Confirm the details section of the product page is working again by refreshing the Bookinfo product page.
+. Confirm the details section is working again by refreshing the http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo product page^].
 +
 image::mcp-server-bookinfo-details-fixed.png[Bookinfo product page with details section restored after removing fault injection,link=_images/mcp-server-bookinfo-details-fixed.png,window=ea-images]
 +
