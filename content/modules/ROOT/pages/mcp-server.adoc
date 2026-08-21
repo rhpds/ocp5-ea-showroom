@@ -164,7 +164,7 @@ echo "============================================================"
 oc login -u {openshift_cluster_admin_username} -p {openshift_cluster_admin_password}
 ----
 
-. Update your AI client configuration to use the `mcp-viewer` token.
+. Update your AI client configuration to use the `mcp-viewer` token, then restart your client. The easiest way is to quit and reopen Cursor, or exit Claude Code and restart with `claude -c`.
 
 . Try a read operation — this should succeed:
 +
@@ -194,7 +194,7 @@ Create a ConfigMap named hack in namespace default
 oc get cm hack -n default 2>&1 || echo "ConfigMap not found — RBAC enforcement confirmed"
 ----
 +
-IMPORTANT: Switch your AI client back to the `mcp-admin` token (from Exercise 1) before continuing. The remaining exercises require write access and will fail with the `mcp-viewer` token.
+IMPORTANT: Switch your AI client back to the `mcp-admin` token (from Exercise 1) before continuing. The remaining exercises require write access and will fail with the `mcp-viewer` token. Restart your client after switching tokens (quit and reopen Cursor, or exit Claude Code and restart with `claude -c`).
 
 == Observability & Network Diagnostics
 
@@ -324,9 +324,9 @@ oc patch deployment openshift-mcp-server -n openshift-mcp \
 oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
 ----
 +
-In read-only mode, write tools are *hidden entirely* — not just blocked. The tool count drops from 39 to approximately 32 (the 4 write tools `pods_delete`, `resources_create_or_update`, `resources_delete`, and `resources_scale` disappear from the tool list).
+In read-only mode, write tools are *hidden entirely*, not just blocked. This applies to all toolsets including OSSM (e.g., `ossm_manage_istio_config` also disappears). The tool count drops from 49 to approximately 41.
 +
-NOTE: Most MCP clients cache the tool list at connect time. After enabling read-only mode, you will need to remove and re-add the MCP server in your AI client to see the updated tool count.
+NOTE: Most MCP clients cache the tool list at connect time. After enabling read-only mode, restart your client to refresh the tool list. The easiest way is to quit and reopen Cursor, or exit Claude Code and restart with `claude -c`.
 
 . Try a write prompt — should fail with "unknown tool":
 +
@@ -358,6 +358,8 @@ oc patch deployment openshift-mcp-server -n openshift-mcp \
   -p='[{"op":"replace","path":"/spec/template/spec/containers/0/args","value":["--config","/etc/mcp/config.toml"]}]'
 oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
 ----
++
+Restart your client after restoring write mode so the write tools reappear (quit and reopen Cursor, or exit Claude Code and restart with `claude -c`).
 
 == Service Mesh (Kiali/OSSM)
 
@@ -484,59 +486,7 @@ The AI should use `ossm_list_traces` and optionally `ossm_get_trace_details` to:
 
 NOTE: If the tracing backend (Tempo) has not collected traces yet, an empty result is expected. Allow a few minutes of traffic generation before retrying.
 
-=== Exercise 14: Read-Only Mode Blocks OSSM Write Tools
-
-When the MCP server is in read-only mode, write tools should be completely hidden — not just blocked. This applies to OSSM tools as well.
-
-. Enable read-only mode (if not already enabled from Exercise 8). Run the following in the Showroom Terminal on the right:
-+
-[source,sh,role=execute]
-----
-oc patch deployment openshift-mcp-server -n openshift-mcp \
-  --type=json \
-  -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--read-only"}]'
-oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
-----
-+
-NOTE: After enabling read-only mode, remove and re-add the MCP server in your AI client so the tool list refreshes.
-
-. Verify that `ossm_manage_istio_config` (the write tool) is *absent* from the tool list:
-+
-[source,role="copypaste"]
-----
-List all available service mesh tools
-----
-+
-The response should include read-only tools (`ossm_get_mesh_status`, `ossm_manage_istio_config_read`, `ossm_get_mesh_traffic_graph`) but *not* `ossm_manage_istio_config`.
-
-. Try a write operation — it should fail:
-+
-[source,role="copypaste"]
-----
-Create a new VirtualService in the bookinfo namespace
-----
-
-. Confirm that read tools still work:
-+
-[source,role="copypaste"]
-----
-List Istio config in bookinfo
-----
-
-. Restore write mode when done:
-+
-[source,sh,role=execute]
-----
-oc patch deployment openshift-mcp-server -n openshift-mcp \
-  --type=json \
-  -p='[{"op":"replace","path":"/spec/template/spec/containers/0/args","value":["--config","/etc/mcp/config.toml"]}]'
-oc rollout status deployment openshift-mcp-server -n openshift-mcp --timeout=120s
-----
-+
-IMPORTANT: Remove and re-add the MCP server in your AI client after restoring write mode so that write tools reappear.
-
-=== Exercise 15: Traffic Routing and Issue Detection (Write)
-
+=== Exercise 14: Traffic Routing and Issue Detection
 The EAP environment pre-seeds a VirtualService for reviews that routes 100% of traffic to v1 (no red stars on the product page). The AI should detect this and be able to fix it.
 
 . Open and reload the http://istio-ingressgateway-istio-system.{openshift_cluster_ingress_domain}/productpage[Bookinfo product page^] several times and note that reviews never show any stars, red or black (only reviews-v1 is receiving traffic):
@@ -599,7 +549,7 @@ spec:
 EOF
 ----
 
-=== Exercise 16: Fault Injection Troubleshooting
+=== Exercise 15: Fault Injection Troubleshooting
 
 In this exercise you will inject a fault into the Bookinfo details service and then ask the AI to diagnose and fix it.
 
@@ -683,8 +633,7 @@ oc delete virtualservice details -n bookinfo --ignore-not-found
 oc delete destinationrule details -n bookinfo --ignore-not-found
 ----
 
-=== Exercise 17: Create an Istio Gateway (Write)
-
+=== Exercise 16: Create an Istio Gateway
 The OSSM write tool can create Istio resources. In this exercise, the AI creates a test Gateway to verify write functionality.
 
 . Ask your AI assistant:
@@ -714,9 +663,8 @@ oc get gateway.networking.istio.io eap-test-gateway -n istio-system
 Show me the details of the eap-test-gateway in istio-system
 ----
 
-=== Exercise 18: Delete an Istio Gateway (Write)
-
-After creating the test Gateway in Exercise 17, verify that the AI can also delete Istio resources.
+=== Exercise 17: Delete an Istio Gateway
+After creating the test Gateway in Exercise 16, verify that the AI can also delete Istio resources.
 
 . Ask your AI assistant:
 +
@@ -736,7 +684,7 @@ NOTE: AI clients like Claude are extra cautious with destructive operations. The
 oc get gateway.networking.istio.io eap-test-gateway -n istio-system 2>&1 || echo "Gateway deleted successfully"
 ----
 
-=== Exercise 19: Multi-Tool Mesh Investigation
+=== Exercise 18: Multi-Tool Mesh Investigation
 
 This exercise combines multiple OSSM tools in a single investigation, demonstrating how AI can correlate data from mesh health, traffic graphs, tracing, and Istio config to build a complete picture.
 
