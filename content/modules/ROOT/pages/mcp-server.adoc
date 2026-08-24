@@ -44,16 +44,16 @@ To connect an MCP-compatible client (Claude Desktop, Cursor, etc.) to the OpenSh
 +
 [source,sh,role=execute,subs="+attributes"]
 ----
-ADMIN_TOKEN=$(oc whoami -t)
+cp ~/.kube/config ~/.kube/config.bak
 MCP_ADMIN_PASS=$(oc get secret mcp-user-credentials -n openshift-mcp -o jsonpath='{.data.mcp-admin}' | base64 -d)
 oc login -u mcp-admin -p "${MCP_ADMIN_PASS}"
 echo "============================================================"
 echo "Your mcp-admin token: $(oc whoami -t)"
 echo "============================================================"
-oc login --token="${ADMIN_TOKEN}"
+cp ~/.kube/config.bak ~/.kube/config
 ----
 +
-NOTE: The commands above save your current session, log in as `mcp-admin` to obtain the token, then switch back to the cluster admin. Copy the displayed token for use in your AI client.
+NOTE: The commands above log in as `mcp-admin` to obtain the token, then restore the cluster admin session. Copy the displayed token for use in your AI client.
 
 . Configure your MCP client with the endpoint and token, replacing `<paste-your-token-here>` with the token you just generated.
 +
@@ -159,13 +159,13 @@ In production environments, not every user should have write access. The MCP ser
 +
 [source,sh,role=execute]
 ----
-ADMIN_TOKEN=$(oc whoami -t)
+cp ~/.kube/config ~/.kube/config.bak
 MCP_VIEWER_PASS=$(oc get secret mcp-user-credentials -n openshift-mcp -o jsonpath='{.data.mcp-viewer}' | base64 -d)
 oc login -u mcp-viewer -p "${MCP_VIEWER_PASS}"
 echo "============================================================"
 echo "Your mcp-viewer token: $(oc whoami -t)"
 echo "============================================================"
-oc login --token="${ADMIN_TOKEN}"
+cp ~/.kube/config.bak ~/.kube/config
 ----
 
 . Update your AI client configuration to use the `mcp-viewer` token, then restart your client. The easiest way is to quit and reopen Cursor, or exit Claude Code and restart with `claude -c`.
