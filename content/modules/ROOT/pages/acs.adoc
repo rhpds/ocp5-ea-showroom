@@ -26,20 +26,18 @@ Each of these features is covered in more detail in the following sections. Part
 
 * Register for the link:https://docs.google.com/forms/d/e/1FAIpQLSdjrEjL3lCfmTTVEwwMct-H72UNZ729RsIkUQ8Wvp5yHmtrOw/viewform[ACS 5.0 Feedback Form^]. You can track your feedback in the doc and there is a link to the form at the end of each exercise.
 
-* Next, confirm you can open the OpenShift console and ACS Central tabs in the Showroom UI. Log in with these credentials:
+* Next, confirm you can open the OpenShift console and ACS Central tabs in the Showroom UI. Log in with the credentials given to you for the Early Access Program:
 +
-[cols="1,1,1,1"]
+[cols="1,1,1"]
 |===
-| *Service* | *Username* | *Password* | *Link*
+| *Service* | *Username* | *Link*
 
 | OpenShift Console
 | `{openshift_cluster_admin_username}`
-| `{openshift_cluster_admin_password}`
 | {openshift_cluster_console_url}[Console^]
 
 | ACS Central
 | `admin`
-| `{common_password}`
 | https://central-acs.{openshift_cluster_ingress_domain}[ACS Central^]
 |===
 
@@ -199,21 +197,7 @@ image::acs-vm-openshift-virtualmachines.png[OpenShift console VirtualMachines pa
 +
 On the `rhel9-vm` overview, use *Open web console* (or open the *Console* tab).
 +
-Log in with the following credentials:
-+
-Username:
-+
-[source,text,role="copypaste",subs="+attributes"]
-----
-{vm_user}
-----
-+
-Password:
-+
-[source,text,role="copypaste",subs="+attributes"]
-----
-{vm_password}
-----
+Log in with username `{vm_user}` and password `{vm_password}`.
 +
 Run the remaining guest commands in this procedure from the VM console, not from the Showroom terminal.
 
@@ -300,21 +284,7 @@ oc get vmi rhel-webserver -n acs-virt
 +
 TIP: The VMI should reach `Running` within a couple of minutes. First-boot cloud-init (subscription, packages, `roxagent`) can still take several minutes after that.
 
-. Optionally verify `roxagent` inside the guest. Open the console (*Virtualization > VirtualMachines > rhel-webserver > Console*) and log in:
-+
-Username:
-+
-[source,text,role="copypaste"]
-----
-cloud-user
-----
-+
-Password:
-+
-[source,text,role="copypaste"]
-----
-redhat
-----
+. Optionally verify `roxagent` inside the guest. Open the console (*Virtualization > VirtualMachines > rhel-webserver > Console*) and log in with the credentials from the cloud-init secret you applied above (username: `cloud-user`).
 +
 [source,bash,role="copypaste"]
 ----
@@ -446,7 +416,8 @@ Open a matching violation and review the runtime detail (file path, process cont
 [source,bash,role="execute",subs="+attributes"]
 ----
 CENTRAL="https://central-acs.{openshift_cluster_ingress_domain}"
-curl -sk -u "admin:{common_password}" -G "${CENTRAL}/v1/alerts/summary/groups" \
+ACS_PASS=$(oc get secret central-admin-password -n acs -o jsonpath='{.data.password}' | base64 -d)
+curl -sk -u "admin:${ACS_PASS}" -G "${CENTRAL}/v1/alerts/summary/groups" \
   --data-urlencode 'query=Policy:"Deployment File Activity"' | jq .
 ----
 +
@@ -475,7 +446,8 @@ IMPORTANT: Plain `oc debug node` shells are classified as *deployment* events. T
 [source,bash,role="execute",subs="+attributes"]
 ----
 CENTRAL="https://central-acs.{openshift_cluster_ingress_domain}"
-curl -sk -u "admin:{common_password}" -G "${CENTRAL}/v1/alerts/summary/groups" \
+ACS_PASS=$(oc get secret central-admin-password -n acs -o jsonpath='{.data.password}' | base64 -d)
+curl -sk -u "admin:${ACS_PASS}" -G "${CENTRAL}/v1/alerts/summary/groups" \
   --data-urlencode 'query=Policy:"Node File Activity"' | jq .
 ----
 +
@@ -617,7 +589,8 @@ Use this path if you want to connect Claude Code, Cursor, or Claude Desktop the 
 [source,bash,role="execute",subs="+attributes"]
 ----
 CENTRAL="https://central-acs.{openshift_cluster_ingress_domain}"
-curl -sk -u "admin:{common_password}" \
+ACS_PASS=$(oc get secret central-admin-password -n acs -o jsonpath='{.data.password}' | base64 -d)
+curl -sk -u "admin:${ACS_PASS}" \
   -X POST "${CENTRAL}/v1/apitokens/generate" \
   -H "Content-Type: application/json" \
   -d '{"name":"acs-mcp-lab","roles":["Analyst"]}' | jq -r .token
