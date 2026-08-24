@@ -197,7 +197,7 @@ image::acs-vm-openshift-virtualmachines.png[OpenShift console VirtualMachines pa
 +
 On the `rhel9-vm` overview, use *Open web console* (or open the *Console* tab).
 +
-Log in with username `{vm_user}` and password `{vm_password}`.
+Log in with username `{vm_user}` and the password from the credentials given to you for the Early Access Program.
 +
 Run the remaining guest commands in this procedure from the VM console, not from the Showroom terminal.
 

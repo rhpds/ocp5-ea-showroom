@@ -24,7 +24,7 @@ This environment covers four main feature areas:
 
 == Credentials
 
-NOTE: Cluster admin and ACS passwords are not listed here for security reasons. Refer to the credentials given to you for the Early Access Program.
+NOTE: Some passwords are not listed here for security reasons. Refer to the credentials given to you for the Early Access Program.
 
 [cols="1,1,1,1"]
 |===
@@ -47,7 +47,7 @@ NOTE: Cluster admin and ACS passwords are not listed here for security reasons. 
 
 | RHEL 9 VM (acs-virt namespace)
 | `{vm_user}`
-| `{vm_password}`
+| (see EAP credentials)
 | {openshift_cluster_console_url}/k8s/ns/acs-virt/kubevirt.io{tilde}v1{tilde}VirtualMachine/rhel9-vm[Virtual Machine in OpenShift Console^]
 |===
 
