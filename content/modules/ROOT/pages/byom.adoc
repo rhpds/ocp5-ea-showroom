@@ -94,15 +94,11 @@ Azure OpenAI::
 Applies to both *Lightspeed* and *Agentic Troubleshooting*.
 Set the variables below with your Azure OpenAI values, then run the commands.
 +
-NOTE: The Agentic operator uses the OpenAI-compatible Responses API endpoint.
-The URL automatically gets `/openai/v1` appended for the agentic configuration.
-Classic Lightspeed uses the standard Azure OpenAI endpoint without this suffix.
-+
 [source,bash,role="copypaste"]
 ----
 # Set your Azure OpenAI values
 API_KEY="your-azure-api-key"
-AZURE_ENDPOINT="https://myendpoint.openai.azure.com"
+AZURE_ENDPOINT="https://myendpoint.openai.azure.com/openai/v1"
 DEPLOYMENT_NAME="gpt-5.4"
 
 # Update Lightspeed credentials and config
@@ -130,7 +126,6 @@ oc patch olsconfig cluster --type=merge -p '{
 }'
 
 # Update Agentic Troubleshooting credentials and config
-# Note: Agentic uses OpenAI-compatible type with the Azure v1 Responses API endpoint
 oc create secret generic llm-creds-openai-custom -n openshift-lightspeed \
   --from-literal=OPENAI_API_KEY="${API_KEY}" \
   --dry-run=client -o yaml | oc apply -f -
@@ -143,7 +138,7 @@ metadata:
 spec:
   type: OpenAI
   openAI:
-    url: "${AZURE_ENDPOINT}/openai/v1"
+    url: "${AZURE_ENDPOINT}"
     credentialsSecret:
       name: llm-creds-openai-custom
 EOF
