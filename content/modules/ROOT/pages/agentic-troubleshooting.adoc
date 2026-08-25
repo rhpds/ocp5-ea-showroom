@@ -157,6 +157,14 @@ This workflow allows SREs to dynamically construct useful dashboards through nat
 
 By default, the agentic alerts adapter runs in the cluster but does not process alerts. In this exercise, you will enable automatic investigation of critical alerts and review the agent's proposed remediation.
 
+. First, enable automatic analysis so that agentic runs begin investigating immediately without requiring manual approval:
++
+[source,sh,role=execute]
+----
+oc patch approvalpolicy cluster --type merge \
+  -p '{"spec":{"stages":[{"name":"Analysis","approval":"Automatic"},{"name":"Execution","approval":"Manual"},{"name":"Verification","approval":"Automatic"}]}}'
+----
+
 . Enable the alerts adapter to process critical alerts:
 +
 [source,sh,role=execute]

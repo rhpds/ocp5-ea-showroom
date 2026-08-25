@@ -45,6 +45,11 @@ oc -n payments set image deployment/reporting-service \
   reporting-service=quay.io/afalossi/ts01-reporting-service:v1.0.2 2>/dev/null || true
 echo "  Restored reporting-service to v1.0.2 (intentionally bad version)"
 
+# Exercise 4: Reset ApprovalPolicy Analysis back to Manual
+oc patch approvalpolicy cluster --type merge \
+  -p '{"spec":{"stages":[{"name":"Analysis","approval":"Manual"},{"name":"Execution","approval":"Manual"},{"name":"Verification","approval":"Automatic"}]}}' 2>/dev/null || true
+echo "  Reset ApprovalPolicy Analysis to Manual"
+
 # Exercise 4: Revert alerts-adapter-config to disable critical alerts
 oc get configmap alerts-adapter-config -n openshift-lightspeed -o json 2>/dev/null \
   | jq '.data["config.yaml"] |= gsub("      +- critical"; "      #  - critical")' \
