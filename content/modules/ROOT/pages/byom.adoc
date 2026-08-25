@@ -23,41 +23,7 @@ The following models have been tested with this environment (as of August 2026).
 | Gemma 4 31B | Google | _Planned for offline/disconnected deployments_
 |===
 
-[IMPORTANT]
-====
-Before making any changes, pause ArgoCD auto-sync on both the
-app-of-apps and the lightspeed application to prevent them from
-reverting your custom configuration:
-
-[source,bash,role="copypaste"]
-----
-# Pause auto-sync on app-of-apps (prevents it from restoring child app settings)
-oc patch application app-of-apps -n openshift-gitops --type=json \
-  -p '[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
-
-# Pause auto-sync on the openshift-lightspeed application (base OLS operator + OLSConfig)
-oc patch application openshift-lightspeed -n openshift-gitops --type=json \
-  -p '[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
-
-# Pause auto-sync on the openshift-agentic-lightspeed application
-oc patch application openshift-agentic-lightspeed -n openshift-gitops --type=json \
-  -p '[{"op":"remove","path":"/spec/syncPolicy/automated"}]'
-----
-
-To re-enable auto-sync later (which will revert your custom config back to defaults):
-
-[source,bash,role="copypaste"]
-----
-oc patch application app-of-apps -n openshift-gitops --type=merge \
-  -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
-
-oc patch application openshift-lightspeed -n openshift-gitops --type=merge \
-  -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
-
-oc patch application openshift-agentic-lightspeed -n openshift-gitops --type=merge \
-  -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
-----
-====
+NOTE: ArgoCD is configured to ignore LLM configuration changes, so your custom model settings will persist without needing to pause auto-sync.
 
 Select your LLM provider below:
 
