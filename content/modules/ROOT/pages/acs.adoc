@@ -209,7 +209,7 @@ command -v roxagent
 sudo journalctl -u roxagent.service --no-pager -n 20
 ----
 +
-`command -v` should print the `roxagent` path. The journal should show the `roxagent` unit running `serve --port 818` (VSOCK pull) and a completed scan, for example `Initial scan complete, report cached. Num packages:`.
+`command -v` should print the path of the `roxagent` binary. The journal should show the service starting (`Started StackRox VM Agent (native).`), scanning packages, and reporting results — for example `Sent message with index report containing 491 packages to host` followed by `Deactivated successfully`. A warning about RPM epoch matching is expected and can be safely ignored.
 
 . In ACS Central, open *Vulnerability Management > Results > Virtual Machines*.
 +
