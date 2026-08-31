@@ -84,6 +84,8 @@ EOF
 
 oc patch agent default --type=merge \
   -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"'"${MODEL_NAME}"'"}}'
+oc patch agent smart --type=merge \
+  -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"'"${MODEL_NAME}"'"}}'
 
 # Restart Lightspeed to pick up changes
 oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
@@ -145,6 +147,8 @@ EOF
 
 oc patch agent default --type=merge \
   -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"'"${DEPLOYMENT_NAME}"'"}}'
+oc patch agent smart --type=merge \
+  -p '{"spec":{"llmProvider":{"name":"openai-custom"},"model":"'"${DEPLOYMENT_NAME}"'"}}'
 
 # Restart Lightspeed to pick up changes
 oc rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
@@ -191,6 +195,8 @@ EOF
 
 # Update the Agentic Agent
 oc patch agent default --type=merge \
+  -p '{"spec":{"llmProvider":{"name":"vertex-custom"},"model":"'"${MODEL_NAME}"'"}}'
+oc patch agent smart --type=merge \
   -p '{"spec":{"llmProvider":{"name":"vertex-custom"},"model":"'"${MODEL_NAME}"'"}}'
 ----
 
