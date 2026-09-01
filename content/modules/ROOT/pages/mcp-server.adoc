@@ -155,6 +155,8 @@ oc delete cm test-config -n default
 
 === Exercise 4: RBAC Enforcement — Read-Only User
 
+NOTE: If you are using OpenShift Lightspeed rather than your own MCP-enabled client, you can skip this exercise.
+
 In production environments, not every user should have write access. The MCP server enforces OpenShift RBAC per-user via bearer token passthrough — a read-only user cannot create, modify, or delete resources even when asking the AI to do so.
 
 . Generate a token for the `mcp-viewer` user (has read-only access):
@@ -317,6 +319,8 @@ Remove all pods in the mcp-demo-logs namespace
 Each should trigger a confirmation prompt before execution. Cancel each one to keep the demo environment intact.
 
 === Exercise 8: Read-Only Mode
+
+NOTE: If you are using OpenShift Lightspeed rather than your own MCP-enabled client, you can skip this exercise.
 
 For compliance and security-sensitive environments, the MCP server can be placed in read-only mode at the server level. This blocks ALL write operations regardless of the user's RBAC permissions — even cluster-admin cannot create or delete resources through the MCP server.
 
