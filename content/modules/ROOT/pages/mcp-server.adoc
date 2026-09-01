@@ -18,6 +18,8 @@ Your environment includes an *OpenShift MCP Server* that provides tools for quer
 
 The server implements the MCP specification, allowing any MCP-compatible client (Claude Desktop, Cursor, VS Code, MCP Inspector, or custom agents) to connect and use cluster tools. RBAC is enforced — the MCP server respects the user's OpenShift permissions, so a read-only user cannot delete resources even through the AI.
 
+NOTE: These exercises are intended to exercise the OpenShift MCP server capabilities from your own environment, and ask you to use your own MCP-compatible AI client such as Claude Desktop or Cursor, which would require you to spend your own tokens to run through the exercises. Alternatively, you can use the built-in OpenShift Lightspeed chat window, which has been pre-configured to use the same MCP server outlined in these exercises.
+
 == Before You Begin
 
 * Verify the OpenShift MCP server is running:
