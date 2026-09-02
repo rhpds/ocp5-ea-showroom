@@ -275,7 +275,6 @@ The AI should call `events_list` to surface the `FailedCreatePodSandBox` warning
 
 . You can also try general network diagnostics:
 +
-+
 [source,role="copypaste"]
 ----
 Run ingress diagnostics on this cluster
@@ -304,7 +303,6 @@ The AI should *not* immediately delete the namespace. Instead, it should warn yo
 IMPORTANT: Type *cancel* or *no* to abort. Do not actually delete this namespace — it is used by Exercise 5.
 
 . Try other phrasings to test the safety boundary:
-+
 +
 [source,role="copypaste"]
 ----
