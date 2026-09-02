@@ -877,6 +877,45 @@ Switch to the RHACS console again. On the Dashboard, assuming you have selected 
 image::acs-deployment-red.png[indication of detection of critical CVE and violations in init-container for red]
 
 [.step-title]
+Selectively Skipping Init Container Evaluation
+
+Organizations upgrading from ACS 4.x may want to preserve the previous behavior where init containers were not evaluated by certain policies. ACS provides a utility script that adds a "skip init containers" filter to existing policies, letting you selectively opt out of init container evaluation on a per-policy basis.
+
+The script is interactive — for each eligible policy it prompts you to apply the skip filter, skip it, or apply to all remaining policies. It automatically skips policies that already have evaluation filters, build-only policies, declarative (CRD-managed) policies, and audit/node event policies.
+
+NOTE: The GA version of this script is available at https://github.com/stackrox/contributions/tree/main/util-scripts/skip-init-container-evaluation[stackrox/contributions^]. The version included in `ea5-components` has been modified to accept the nightly ACS 5 builds used in this EAP environment, which may report a pre-5.0 version number.
+
+NOTE: Organizations using SecurityPolicy CRDs (policy-as-code) should instead manually add `skipContainerTypes: ["INIT"]` to the `evaluationFilter` specification in their manifests.
+
+First, generate an API token and set the required environment variables:
+
+[source,bash,role="execute",subs="+attributes"]
+----
+CENTRAL="https://central-acs.{openshift_cluster_ingress_domain}"
+ACS_PASS=$(oc get secret central-admin-password -n acs -o jsonpath='{.data.password}' | base64 -d)
+export ROX_API_TOKEN=$(curl -sk -u "admin:${ACS_PASS}" \
+  -X POST "${CENTRAL}/v1/apitokens/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"skip-init-eval","roles":["Admin"]}' | jq -r .token)
+export ROX_ENDPOINT="central-acs.{openshift_cluster_ingress_domain}:443"
+----
+
+Then run the script from the `ea5-components` directory you cloned earlier:
+
+[source,bash,role="execute"]
+----
+cd ea5-components
+chmod +x skip-init-container-evaluation.sh
+./skip-init-container-evaluation.sh
+----
+
+The script will list all eligible policies and prompt you for each one. Answer `yes` to add the skip filter, `no` to leave it unchanged, or `all` to update all remaining policies without further prompts.
+
+After running the script, navigate to the RHACS console and open *Platform Configuration > Policy Management*. Policies that were updated by the script will show a "Skips init" indicator next to them. Note that the declarative (CRD-managed) policies we applied earlier (`EAP-Init-Test: Privileged Container` and `EAP-Init-Test: Fixable Important+ CVE`) were explicitly skipped by the script — these must be managed separately by adding `skipContainerTypes: ["INIT"]` to the `evaluationFilter` in their CRD manifests.
+
+image::acs-skip-init-policy-management.png[Policy Management showing Skips init indicator on updated policies,link=_images/acs-skip-init-policy-management.png,window=ea-images]
+
+[.step-title]
 Structured feedback (Init Container Security Coverage)
 
 Thank you for completing this exercise! Please help us improve by submitting feedback for Init Container Security Coverage:
