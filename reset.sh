@@ -117,9 +117,11 @@ echo "  Removed eap-test-gateway"
 echo ""
 echo "--- Resetting ACS exercise state ---"
 
-# Before You Begin: Delete ACS ConsoleLink
-oc delete consolelink acs-console --ignore-not-found 2>/dev/null || true
-echo "  Deleted ACS ConsoleLink"
+# Before You Begin: Delete ACS ConsoleLink (AI may name it differently)
+for cl in $(oc get consolelink -o json 2>/dev/null | jq -r '.items[] | select(.spec.href | test("central-acs")) | .metadata.name'); do
+  oc delete consolelink "$cl" --ignore-not-found 2>/dev/null || true
+done
+echo "  Deleted ACS ConsoleLink(s)"
 
 # Before You Begin: Delete demo app namespaces
 for ns in juice-shop log4shell webgoat dvwa emojivoto acs-fam-demo acs-init-container-test; do
