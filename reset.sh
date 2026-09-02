@@ -62,10 +62,12 @@ oc delete analysisresult --all -n openshift-lightspeed 2>/dev/null || true
 echo "  Deleted all AgenticRuns and AnalysisResults"
 
 # Delete Perses Investigation Hub dashboard
-TOKEN=$(oc whoami -t)
-oc exec -n openshift-operators perses-0 -- curl -sk -X DELETE \
-  -H "Authorization: Bearer ${TOKEN}" \
-  https://localhost:8080/api/v1/projects/payments/dashboards/investigation_hub 2>/dev/null || true
+TOKEN=$(oc create token perses-sa -n openshift-operators 2>/dev/null) || true
+if [ -n "${TOKEN}" ]; then
+  oc exec -n openshift-operators perses-0 -- curl -sk -X DELETE \
+    -H "Authorization: Bearer ${TOKEN}" \
+    https://localhost:8080/api/v1/projects/payments/dashboards/investigation_hub 2>/dev/null || true
+fi
 echo "  Deleted Investigation Hub Perses dashboard"
 
 # ── Kiali/OSSM exercises ──
