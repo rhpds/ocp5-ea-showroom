@@ -652,12 +652,12 @@ As such they are an attack vector for exploitation; RHACS now has capabilities f
 
 Unlike Pods, Init Containers are not resident; once executed they are removed, so the runtime policies offered by RHACS focus on process execution and baseline comparisons.
 
-For this exercise we will be using the OCP and RHACS interfaces.
+For this exercise we will be using the built-in terminal on the right, the OCP console, and the RHACS interface.
 
 [.step-title]
-Using OpenShift Lightspeed and the OpenShift User Interface to prepare the tests
+Preparing the tests
 
-In the OpenShift lightspeed dialog, enter the following:
+In the OpenShift Lightspeed dialog, enter the following:
 
 [source,role="copypaste"]
 ----
@@ -669,18 +669,16 @@ The MCP server requires approval, so approve when it asks you.
 On the left hand navigation, choose 'Projects' and then acs-init-container-test. All of the examples will be executed in this project to allow you to observe the results simply in
 the ACS console.
 
-Now click on the '>_' icon at the top right to open the integrated Terminal in the User Interface. We will use this to interact with the project for simplicities sake.
+In the built-in terminal on the right, run:
 
-In the Terminal, type:
-
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
 oc project acs-init-container-test
 ----
 
 Check the project has no workloads using:
 
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
 oc get pods
 ----
@@ -688,9 +686,9 @@ oc get pods
 [.step-title]
 Enabling Privileged access for the tests
 
-In the Terminal, type:
+In the terminal, run:
 
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
 oc adm policy add-scc-to-user privileged system:serviceaccount:acs-init-container-test:default
 ----
@@ -708,34 +706,29 @@ RHACS for the monitoring and actioning of Init Containers. These are:
 .. 'Blue' deployment - runs an Init Container that performs a Privileged action that has justification 
 .. 'Red' deployment - runs an Init Container that uses an unpatched Image with known CVEs and performs a Privileged action that has no justification 
 
-In the Terminal, type:
+In the terminal, run:
 
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
-git clone https://github.com/redhat-ads-tech/ea5-components
-----
-
-[WARNING]
-====
-The Terminal has an automatic timeout. When it disconnects it may lose state; if so, repeat the 'git clone' command above to restore or re-clone the material needed for the examples
-====
-
-In the Terminal, type:
-
-[source,bash,role="copypaste"]
-----
-cd ea5-components
+git clone https://github.com/redhat-ads-tech/ea5-components ~/ea5-components
 ----
 
-We will now apply two additional policies specific to this namespace only; in the Terminal, type:
+In the terminal, run:
 
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
-oc create -f fixable-important-cve.yaml
-oc create -f privileged-init-container.yaml
+cd ~/ea5-components
 ----
 
-While in the Terminal, have a look at these two policy definitions. Specifically, for `privileged-init-container.yaml` note:
+We will now apply two additional policies specific to this namespace only; in the terminal, run:
+
+[source,bash,role="execute"]
+----
+oc create -f ~/ea5-components/fixable-important-cve.yaml
+oc create -f ~/ea5-components/privileged-init-container.yaml
+----
+
+While in the terminal, have a look at these two policy definitions. Specifically, for `privileged-init-container.yaml` note:
 
 [source,bash]
 ----
@@ -761,11 +754,11 @@ image::acs-clusters.png[Selecting the local cluster]
 
 Now click on 'All Namespaces' and select 'acs-init-container-test'. There should be no violations (we have no workloads yet).
 
-In the OpenShift terminal, type:
+In the terminal, run:
 
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
-oc create -f clean-deployment.yaml
+oc create -f ~/ea5-components/clean-deployment.yaml
 ----
 
 [NOTE]
@@ -785,17 +778,12 @@ Note the definition of the init-container; RHACS has detected and scanned this i
 
 image::acs-deployment-clean.png[Clean deployment definition]
 
-Switch to the OpenShift Terminal, and type the following:
+In the terminal, run:
 
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
-oc create -f dirty-deployment.yaml
+oc create -f ~/ea5-components/dirty-deployment.yaml
 ----
-
-[WARNING]
-====
-If the Terminal has timed out, or if you have closed and reopened it, make sure to perform the clone operation stated above, cd into the ea5-component directory *and* set the project to acs-init-container-test, as the Terminal will default to a clean file system and the openshift-terminal project
-====
 
 Once the Application has deployed, click on *Workloads* and *Topology*. Click on the *dirty-app* roundel, then click on the Pod name displayed in the right-hand content window.
 
@@ -826,13 +814,11 @@ image::acs-deployment-dirty.png[Dirty deployment ACS output]
 RHACS has detected and reported on violations within the Image of the init-container as executed as part of the 'dirty' deployment correctly
 ====
 
-Switch to the OpenShift terminal. Make sure you are in the ea5-components directory; again, if the terminal has timed out re-open it and set the project/clone the examples as before.
+In the terminal, run:
 
-Type the following:
-
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
-oc create -f blue-deployment.yaml
+oc create -f ~/ea5-components/blue-deployment.yaml
 ----
 
 Once this has succeeded, click on *Workloads*, *Topology* and make sure the Deployment has been successful (there will be a blue border around the *blue-app* roundel). As before, click on the
@@ -858,11 +844,11 @@ Experiment with the provided policies using the new Filters section and select "
 
 The last scenario is to create a Deployment that behaves as with the *blue* deployment but performs a prohibited task. For this scenario we will add a specific policy and behaviour for our test namespace.
 
-Switch to the OpenShift terminal and type:
+In the terminal, run:
 
-[source,bash,role="copypaste"]
+[source,bash,role="execute"]
 ----
-oc create -f red-deployment.yaml
+oc create -f ~/ea5-components/red-deployment.yaml
 ----
 
 Once the deployment has completed, click *Workloads*, *Topology*, then the roundel for *red-app*. Click on the running Pod, select the *Logs* content pane and examine the log output from the *red-init* container. It should read:
@@ -904,9 +890,8 @@ Then run the script from the `ea5-components` directory you cloned earlier:
 
 [source,bash,role="execute"]
 ----
-cd ea5-components
-chmod +x skip-init-container-evaluation.sh
-./skip-init-container-evaluation.sh
+chmod +x ~/ea5-components/skip-init-container-evaluation.sh
+~/ea5-components/skip-init-container-evaluation.sh
 ----
 
 The script will list all eligible policies and prompt you for each one. Answer `yes` to add the skip filter, `no` to leave it unchanged, or `all` to update all remaining policies without further prompts.
