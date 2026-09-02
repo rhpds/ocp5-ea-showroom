@@ -123,6 +123,8 @@ echo "  Deleted demo app namespaces"
 # Exercise 5: Delete demo SecurityPolicy CRs scoped to acs-init-container-test
 oc delete securitypolicy eap-init-test-fixable-important-cve eap-init-test-privileged-container -n acs --ignore-not-found 2>/dev/null || true
 echo "  Deleted ACS init-container demo policies"
+rm -rf ~/ea5-components 2>/dev/null || true
+echo "  Deleted ea5-components clone"
 
 # Exercise 1 (optional): Delete rhel-webserver VM and cloud-init secret
 oc delete vm rhel-webserver -n acs-virt --ignore-not-found 2>/dev/null || true
