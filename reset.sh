@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Reset the OCP5 EA cluster to pre-exercise state.
 # Idempotent — safe to run multiple times.
-# Does NOT revert BYOM (Bring Your Own Model) changes or cluster upgrades.
+# Does NOT revert BYOM (Bring Your Own Model) changes or cluster upgrades,
+# as these are protected by ArgoCD ignoreDifferences.
 
 set -euo pipefail
 
@@ -146,5 +147,3 @@ echo "  Deleted all AgenticRuns and AnalysisResults"
 echo ""
 echo "=== Reset complete ==="
 echo ""
-echo "Note: BYOM (Bring Your Own Model) changes are NOT reverted."
-echo "      To revert BYOM, re-enable ArgoCD auto-sync on all 3 apps."
