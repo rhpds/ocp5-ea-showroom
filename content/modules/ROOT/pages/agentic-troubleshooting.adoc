@@ -55,7 +55,13 @@ backend-54d6d7b87c-r8qqh    1/1     Running   0          28m
 frontend-6cbbd65959-b7z8m   1/1     Running   0          28m
 ----
 
-. Check that alerts are firing by navigating to *Observe > Alerting* in the OpenShift console. Select *All Projects* from the project dropdown, and remove the *Platform* filter so that both Platform and Application alerts are visible. You should see two Critical alerts (`PaymentErrorRateHigh` and `PodDisruptionBudgetLimit`) along with other Warning and Info alerts that will be used in later exercises.
+. Navigate to *Observe > Alerting* in the OpenShift console.
+
+. Select *All Projects* from the project dropdown, and remove the *Platform* filter so that both Platform and Application alerts are visible.
++
+image::agentic-troubleshooting-remove-platform-filter.png[Remove Platform filter in Alerting view,link=_images/agentic-troubleshooting-remove-platform-filter.png,window=ea-images]
+
+. Confirm that you see two Critical alerts (`PaymentErrorRateHigh` and `PodDisruptionBudgetLimit`), a Warning alert (`PostgresqlTooManyConnections`), and other Warning and Info alerts that will be used in later exercises.
 +
 image::agentic-troubleshooting-observe-alerting.png[Observe Alerting in OpenShift console,link=_images/agentic-troubleshooting-observe-alerting.png,window=ea-images]
 
