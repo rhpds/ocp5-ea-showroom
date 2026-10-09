@@ -46,6 +46,11 @@ oc -n payments set image deployment/reporting-service \
   reporting-service=quay.io/afalossi/ts01-reporting-service:v1.0.2 2>/dev/null || true
 echo "  Restored reporting-service to v1.0.2 (intentionally bad version)"
 
+# Restore inventory-app to the intentionally broken image tag so PDB alert fires again
+oc -n inventory set image deployment/inventory-app \
+  inventory-app=registry.redhat.io/ubi9/ubi:laetst 2>/dev/null || true
+echo "  Restored inventory-app to broken image tag (laetst typo)"
+
 # Exercise 4: Reset ApprovalPolicy Analysis back to Manual
 oc patch approvalpolicy cluster --type merge \
   -p '{"spec":{"stages":[{"name":"Analysis","approval":"Manual"},{"name":"Execution","approval":"Manual"},{"name":"Verification","approval":"Automatic"}]}}' 2>/dev/null || true
